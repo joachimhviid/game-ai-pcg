@@ -1,0 +1,4 @@
+report/out/*
+!report/out/.gitkeep
+.DS_Store
+.idea
