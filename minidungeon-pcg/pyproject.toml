@@ -1,0 +1,26 @@
+[project]
+name = "minidungeon-pcg"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Joachim Hviid",email = "johvi22@student.sdu.dk"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+license = "MIT"
+
+[tool.poetry]
+packages = [{include = "minidungeon_pcg", from = "src"}]
+
+[tool.poetry.scripts]
+start = "minidungeon_pcg.main:main"
+
+[tool.poetry.dependencies]
+tqdm = "^4.67.1"
+gymnasium = "^1.2.2"
+matplotlib = "^3.10.7"
+gym-md = {path = "patches/gym_md-0.5.2-py3-none-any.whl"}
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

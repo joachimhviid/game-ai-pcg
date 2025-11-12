@@ -1,4 +1,29 @@
-report/out/*
-!report/out/.gitkeep
+# Misc
 .DS_Store
 .idea
+
+# LaTeX
+report/out/*
+!report/out/.gitkeep
+*.aux
+*.bbl
+*.blg
+*.brf
+*.idx
+*.ilg
+*.ind
+*.lof
+*.log
+*.lot
+*.out
+*.toc
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+*.pdf
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env/
