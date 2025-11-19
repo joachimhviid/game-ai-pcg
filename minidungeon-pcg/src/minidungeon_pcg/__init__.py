@@ -7,6 +7,6 @@ print(f"Registering env with stage {stage_name}")
 
 register(
     id="md-pcg",
-    entry_point="minidungeon_pcg.environment:MdPcgEnv",
+    entry_point="minidungeon_pcg.envs:MdPcgEnv",
     kwargs={"stage_name": stage_name},
 )
