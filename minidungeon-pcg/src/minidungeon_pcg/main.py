@@ -1,14 +1,13 @@
 import gymnasium as gym
-import gym_md
 import random
 
-env = gym.make('md-test-v0')
+env = gym.make("md-pcg", render_mode="human")
 
 LOOP: int = 100
 TRY_OUT: int = 100
 
+
 def main():
-    print('running main!!!')
     for _ in range(TRY_OUT):
         observation, info = env.reset()
         reward_sum: float = 0.0
