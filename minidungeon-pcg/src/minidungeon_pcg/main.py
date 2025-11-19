@@ -2,10 +2,10 @@ import gymnasium as gym
 import gym_md
 import random
 
-env = gym.make('md-test-v0')
+env = gym.make('md-test-v0', render_mode='human')
 
-LOOP: int = 100
-TRY_OUT: int = 100
+LOOP: int = 10
+TRY_OUT: int = 1
 
 def main():
     print('running main!!!')
