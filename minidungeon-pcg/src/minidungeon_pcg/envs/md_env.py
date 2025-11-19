@@ -9,7 +9,7 @@ import random
 
 
 class MdEnv(gym.Env[np.ndarray, np.ndarray]):
-    metadata = {"render_modes": ["human"], "render_fps": 30}
+    metadata = {"render_modes": ["human"], "render_fps": 10}
 
     def __init__(self, stage_name: str, render_mode=None, debug: bool = False):
         self.render_mode = render_mode
@@ -145,7 +145,12 @@ class MdEnv(gym.Env[np.ndarray, np.ndarray]):
 
         # let the stage renderer draw the map and agent
         try:
-            self.stage_renderer.render(canvas, agent_pos=self.agent.position)
+            self.stage_renderer.render(
+                canvas,
+                agent_pos=self.agent.position,
+                agent_hp=getattr(self.agent, "hp", None),
+                agent_max_hp=getattr(self.agent, "max_hp", None),
+            )
         except Exception:
             # fail silently for rendering so render() doesn't crash the caller
             pass

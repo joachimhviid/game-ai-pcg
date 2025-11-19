@@ -110,7 +110,11 @@ class StageRenderer:
             self.sprites["_agent"] = None
 
     def render(
-        self, surface: pygame.Surface, agent_pos: Optional[Tuple[int, int]] = None
+        self,
+        surface: pygame.Surface,
+        agent_pos: Optional[Tuple[int, int]] = None,
+        agent_hp: Optional[int] = None,
+        agent_max_hp: Optional[int] = None,
     ):
         """Draw the stage into the provided surface. Coordinates are grid-based (x,y).
 
@@ -187,3 +191,39 @@ class StageRenderer:
                 cy = int((ay + 0.5) * self.tile_size)
                 radius = max(2, self.tile_size // 3)
                 pygame.draw.circle(surface, (50, 120, 200), (cx, cy), radius)
+
+            # draw HP bar above agent if hp info is provided
+            try:
+                if agent_hp is not None and agent_max_hp is not None and agent_max_hp > 0:
+                    # compute bar dimensions
+                    pad = max(2, self.tile_size // 10)
+                    bar_w = max(8, int(self.tile_size * 0.8))
+                    bar_h = max(4, self.tile_size // 8)
+                    bar_x = ax * self.tile_size + (self.tile_size - bar_w) // 2
+                    bar_y = ay * self.tile_size - bar_h - pad
+                    # if not enough space above, draw inside the tile at top
+                    if bar_y < 0:
+                        bar_y = ay * self.tile_size + pad
+
+                    # background
+                    bg_rect = pygame.Rect(bar_x, bar_y, bar_w, bar_h)
+                    pygame.draw.rect(surface, (60, 60, 60), bg_rect)
+
+                    # health fraction
+                    frac = max(0.0, min(1.0, float(agent_hp) / float(agent_max_hp)))
+                    fill_w = int(frac * (bar_w - 2))
+                    fill_rect = pygame.Rect(bar_x + 1, bar_y + 1, fill_w, bar_h - 2)
+                    # color gradient: red -> yellow -> green
+                    if frac > 0.66:
+                        color = (50, 200, 50)
+                    elif frac > 0.33:
+                        color = (230, 200, 50)
+                    else:
+                        color = (200, 60, 60)
+                    if fill_w > 0:
+                        pygame.draw.rect(surface, color, fill_rect)
+
+                    # border
+                    pygame.draw.rect(surface, (30, 30, 30), bg_rect, 1)
+            except Exception:
+                pass
