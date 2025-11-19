@@ -21,6 +21,7 @@ tqdm = "^4.67.1"
 gymnasium = "^1.2.2"
 matplotlib = "^3.10.7"
 gym-md = {path = "patches/gym_md-0.5.2-py3-none-any.whl"}
+pygame = "^2.6.1"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
