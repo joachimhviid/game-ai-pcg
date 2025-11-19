@@ -123,16 +123,29 @@ class MdAgent:
                 target = grid[ny][nx] if nx < len(grid[ny]) else " "
                 if target != "#":
                     if target == "M":
+                        # combat: player takes damage but defeats the monster
                         self.hp -= 5
-                        reward += -5.0
                         self.position = (nx, ny)
                         grid[ny][nx] = "."
                         if self.hp <= 0:
+                            # player died — do not award kill reward
                             terminated = True
+                        else:
+                            # award for defeating a monster
+                            reward += 5.0
                     else:
                         self.position = (nx, ny)
                         if target == "T":
                             reward += 1.0
+                            grid[ny][nx] = "."
+                        if target == "P":
+                            # restore some HP (to a maximum) and reward the pickup
+                            heal = 5
+                            new_hp = min(self.max_hp, self.hp + heal)
+                            healed_amount = new_hp - self.hp
+                            self.hp = new_hp
+                            if healed_amount > 0:
+                                reward += 2.0
                             grid[ny][nx] = "."
                         if target == "E":
                             reward += 10.0
@@ -146,6 +159,15 @@ class MdAgent:
             if 0 <= cx < w and 0 <= cy < h:
                 if grid[cy][cx] == "T":
                     reward += 1.0
+                    grid[cy][cx] = "."
+                elif grid[cy][cx] == "P":
+                    # pick up potion on current tile
+                    heal = 5
+                    new_hp = min(self.max_hp, self.hp + heal)
+                    healed_amount = new_hp - self.hp
+                    self.hp = new_hp
+                    if healed_amount > 0:
+                        reward += 2.0
                     grid[cy][cx] = "."
 
         # clamp reward to reasonable bounds and optionally log for debugging
