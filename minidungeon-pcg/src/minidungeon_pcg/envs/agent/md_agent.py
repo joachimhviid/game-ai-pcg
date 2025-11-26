@@ -16,20 +16,25 @@ class MdAgent:
         self.pather = Pather()
         self.debug = debug
 
-    def next_action_to(self, grid, target_chars: set, avoid_monsters: bool = False) -> int:
+    def next_action_to(
+        self, grid, target_chars: set, avoid_monsters: bool = False
+    ) -> int:
         """Return a discrete action index that moves one step toward the nearest
         tile matching `target_chars`. Uses the attached `Pather`.
         """
         if self.position is None:
             return 0
-        return self.pather.next_action(grid, self.position, set(target_chars), avoid_monsters=avoid_monsters)
+        return self.pather.next_action(
+            grid, self.position, set(target_chars), avoid_monsters=avoid_monsters
+        )
 
     def path_to(self, grid, target_chars: set, avoid_monsters: bool = False):
-        """Return full shortest path (list of (x,y)) to nearest `target_chars`.
-        """
+        """Return full shortest path (list of (x,y)) to nearest `target_chars`."""
         if self.position is None:
             return []
-        return self.pather.shortest_path(grid, self.position, set(target_chars), avoid_monsters=avoid_monsters)
+        return self.pather.shortest_path(
+            grid, self.position, set(target_chars), avoid_monsters=avoid_monsters
+        )
 
     def select_action(self, action_vector, grid):
         """Select a high-level action index from a length-7 float vector.
@@ -69,7 +74,9 @@ class MdAgent:
         start = self.position if self.position is not None else (0, 0)
         for idx in candidate_indices:
             target_chars, avoid = mapping[idx]
-            move = self.pather.next_action(grid, start, set(target_chars), avoid_monsters=avoid)
+            move = self.pather.next_action(
+                grid, start, set(target_chars), avoid_monsters=avoid
+            )
             if move != 0:
                 return idx
 
@@ -101,7 +108,9 @@ class MdAgent:
         else:
             target_chars, avoid = mapping[selected_action]
             start = self.position if self.position is not None else (0, 0)
-            resolved_low_level = self.pather.next_action(grid, start, set(target_chars), avoid_monsters=avoid)
+            resolved_low_level = self.pather.next_action(
+                grid, start, set(target_chars), avoid_monsters=avoid
+            )
 
         act_idx = int(resolved_low_level)
 
@@ -176,15 +185,27 @@ class MdAgent:
         if getattr(self, "debug", False):
             try:
                 print(
-                    "MdAgent.take_action: selected=", selected_action,
-                    "low_level=", act_idx,
-                    "reward=", reward,
-                    "pos=", self.position,
-                    "hp=", self.hp,
+                    "MdAgent.take_action: selected=",
+                    selected_action,
+                    "low_level=",
+                    act_idx,
+                    "reward=",
+                    reward,
+                    "pos=",
+                    self.position,
+                    "hp=",
+                    self.hp,
                 )
             except Exception:
                 pass
 
         info = {"selected_high_level": selected_action, "action": act_idx}
-        return self.position, reward, bool(terminated), bool(truncated), info, grid, self.hp
-
+        return (
+            self.position,
+            reward,
+            bool(terminated),
+            bool(truncated),
+            info,
+            grid,
+            self.hp,
+        )

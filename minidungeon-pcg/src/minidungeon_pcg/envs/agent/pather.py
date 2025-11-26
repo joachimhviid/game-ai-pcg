@@ -29,7 +29,12 @@ class Pather:
         w = 0 if h == 0 else max(len(row) for row in grid)
         return w, h
 
-    def bfs(self, grid: Sequence[Sequence[str]], start: Position, avoid_monsters: bool = False):
+    def bfs(
+        self,
+        grid: Sequence[Sequence[str]],
+        start: Position,
+        avoid_monsters: bool = False,
+    ):
         """Run BFS from `start` and return (distances, predecessors).
 
         - distances: dict[(x,y)] -> distance
@@ -66,8 +71,13 @@ class Pather:
 
         return distances, prev
 
-    def shortest_path(self, grid: Sequence[Sequence[str]], start: Position,
-                      target_chars: Set[str], avoid_monsters: bool = False) -> List[Position]:
+    def shortest_path(
+        self,
+        grid: Sequence[Sequence[str]],
+        start: Position,
+        target_chars: Set[str],
+        avoid_monsters: bool = False,
+    ) -> List[Position]:
         """Return shortest path (including start and goal) to the nearest tile
         whose character is in `target_chars`. If none found, returns empty list.
         """
@@ -108,18 +118,30 @@ class Pather:
         path.reverse()
         return path
 
-    def next_step(self, grid: Sequence[Sequence[str]], start: Position,
-                  target_chars: Set[str], avoid_monsters: bool = False) -> Optional[Position]:
+    def next_step(
+        self,
+        grid: Sequence[Sequence[str]],
+        start: Position,
+        target_chars: Set[str],
+        avoid_monsters: bool = False,
+    ) -> Optional[Position]:
         """Return the immediate next position (x,y) along a shortest path to
         the nearest tile matching `target_chars`. Returns None if no path.
         """
-        path = self.shortest_path(grid, start, target_chars, avoid_monsters=avoid_monsters)
+        path = self.shortest_path(
+            grid, start, target_chars, avoid_monsters=avoid_monsters
+        )
         if len(path) < 2:
             return None
         return path[1]
 
-    def next_action(self, grid: Sequence[Sequence[str]], start: Position,
-                    target_chars: Set[str], avoid_monsters: bool = False) -> int:
+    def next_action(
+        self,
+        grid: Sequence[Sequence[str]],
+        start: Position,
+        target_chars: Set[str],
+        avoid_monsters: bool = False,
+    ) -> int:
         """Return the discrete action index to move one step toward the nearest
         `target_chars` tile. Action mapping: 1 up, 2 down, 3 left, 4 right.
         Returns 0 (noop) if no move is possible or no path exists.
@@ -140,10 +162,14 @@ class Pather:
             return 4
         return 0
 
-    def distance_to_nearest(self, grid: Sequence[Sequence[str]], start: Position,
-                            target_chars: Set[str], avoid_monsters: bool = False) -> int:
-        """Return integer distance to nearest target (1000 if unreachable).
-        """
+    def distance_to_nearest(
+        self,
+        grid: Sequence[Sequence[str]],
+        start: Position,
+        target_chars: Set[str],
+        avoid_monsters: bool = False,
+    ) -> int:
+        """Return integer distance to nearest target (1000 if unreachable)."""
         distances, _ = self.bfs(grid, start, avoid_monsters=avoid_monsters)
         if not distances:
             return 1000
@@ -152,7 +178,11 @@ class Pather:
         for y in range(h):
             row = grid[y]
             for x in range(len(row)):
-                if row[x] in target_chars and (x, y) in distances and not (x, y) == start:
+                if (
+                    row[x] in target_chars
+                    and (x, y) in distances
+                    and not (x, y) == start
+                ):
                     d = distances[(x, y)]
                     if best is None or d < best:
                         best = d

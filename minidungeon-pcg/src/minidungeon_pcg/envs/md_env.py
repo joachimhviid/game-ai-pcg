@@ -23,13 +23,13 @@ class MdEnv(gym.Env[np.ndarray, np.ndarray]):
         self._closed = False
 
         self.stage_renderer = StageRenderer(stage_name, window_size=self.window_size)
-        
+
         # keep an editable copy of the map so env dynamics (treasure pickup etc.)
         # can modify it independent of the original stage file. StageRenderer
         # will render whatever is in `self.stage_renderer.grid`, so we keep
         # a deep copy to restore on reset.
         self._initial_grid = [list(r) for r in self.stage_renderer.grid]
-        
+
         # actions: gym-md style - a length-7 float vector where the env picks
         # the highest-scoring high-level action (head-to-monster, head-to-treasure, ...)
         # We'll accept either a length-7 float vector or an integer discrete action.
@@ -46,9 +46,11 @@ class MdEnv(gym.Env[np.ndarray, np.ndarray]):
         grid = self.stage_renderer.grid
         w = self.stage_renderer.width
         h = self.stage_renderer.height
-        
+
         selected = self.agent.select_action(action, grid)
-        new_pos, reward, terminated, truncated, info, new_grid, new_hp = self.agent.take_action(selected, grid, w, h)
+        new_pos, reward, terminated, truncated, info, new_grid, new_hp = (
+            self.agent.take_action(selected, grid, w, h)
+        )
 
         # adopt agent results
         self.stage_renderer.grid = new_grid
@@ -96,15 +98,25 @@ class MdEnv(gym.Env[np.ndarray, np.ndarray]):
 
         if pather is None or not grid:
             # fallback: unreachable distances
-            d_mon = d_tre = d_tre_avoid = d_pot = d_pot_avoid = d_exit = d_exit_avoid = 1000
+            d_mon = d_tre = d_tre_avoid = d_pot = d_pot_avoid = d_exit = (
+                d_exit_avoid
+            ) = 1000
         else:
             d_mon = pather.distance_to_nearest(grid, start, {"M"}, avoid_monsters=False)
             d_tre = pather.distance_to_nearest(grid, start, {"T"}, avoid_monsters=False)
-            d_tre_avoid = pather.distance_to_nearest(grid, start, {"T"}, avoid_monsters=True)
+            d_tre_avoid = pather.distance_to_nearest(
+                grid, start, {"T"}, avoid_monsters=True
+            )
             d_pot = pather.distance_to_nearest(grid, start, {"P"}, avoid_monsters=False)
-            d_pot_avoid = pather.distance_to_nearest(grid, start, {"P"}, avoid_monsters=True)
-            d_exit = pather.distance_to_nearest(grid, start, {"E"}, avoid_monsters=False)
-            d_exit_avoid = pather.distance_to_nearest(grid, start, {"E"}, avoid_monsters=True)
+            d_pot_avoid = pather.distance_to_nearest(
+                grid, start, {"P"}, avoid_monsters=True
+            )
+            d_exit = pather.distance_to_nearest(
+                grid, start, {"E"}, avoid_monsters=False
+            )
+            d_exit_avoid = pather.distance_to_nearest(
+                grid, start, {"E"}, avoid_monsters=True
+            )
 
         obs = np.array(
             [
