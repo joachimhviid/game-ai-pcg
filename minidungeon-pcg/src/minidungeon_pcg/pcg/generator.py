@@ -41,7 +41,7 @@ class Generator:
         self.target_potion_count = 1
         self.target_treasure_count = 3
 
-    def generate_dungeon(self, stage_name: str = "generated") -> List[str]:
+    def generate_dungeon(self, stage_name: str = "generated") -> List[List[str]]:
         """
         Main method to generate a dungeon using GA
         Returns the best dungeon as a list of strings

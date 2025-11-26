@@ -14,6 +14,7 @@ packages = [{include = "minidungeon_pcg", from = "src"}]
 
 [tool.poetry.scripts]
 start = "minidungeon_pcg.main:main"
+generate-stage = "minidungeon_pcg.test_generator:main"
 format = "tools.run_black:run"
 
 [tool.poetry.dependencies]
