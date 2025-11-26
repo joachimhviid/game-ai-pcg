@@ -10,29 +10,25 @@ import json
 
 class PcgSetting(Setting):
     def __init__(self, stage_name: str):
-        self.STAGE_NAME = stage_name # type: ignore
-        self.GRID_CHARACTERS = definition.GRID_CHARACTERS # type: ignore
-        self.OBSERVATIONS = definition.OBSERVATIONS # type: ignore
-        self.ACTIONS = definition.ACTIONS # type: ignore
-        self.CHARACTER_TO_NUM = Setting.list_to_dict( # type: ignore
+        self.STAGE_NAME = stage_name  # type: ignore
+        self.GRID_CHARACTERS = definition.GRID_CHARACTERS  # type: ignore
+        self.OBSERVATIONS = definition.OBSERVATIONS  # type: ignore
+        self.ACTIONS = definition.ACTIONS  # type: ignore
+        self.CHARACTER_TO_NUM = Setting.list_to_dict(  # type: ignore
             self.GRID_CHARACTERS
         )
-        self.NUM_TO_CHARACTER = Setting.swap_dict( # type: ignore
-            self.CHARACTER_TO_NUM
-        )
-        self.OBSERVATION_TO_NUM = Setting.list_to_dict( # type: ignore
+        self.NUM_TO_CHARACTER = Setting.swap_dict(self.CHARACTER_TO_NUM)  # type: ignore
+        self.OBSERVATION_TO_NUM = Setting.list_to_dict(  # type: ignore
             self.OBSERVATIONS
         )
-        self.NUM_TO_OBSERVATION = Setting.swap_dict( # type: ignore
+        self.NUM_TO_OBSERVATION = Setting.swap_dict(  # type: ignore
             self.OBSERVATION_TO_NUM
         )
-        self.ACTION_TO_NUM = Setting.list_to_dict(self.ACTIONS) # type: ignore
-        self.NUM_TO_ACTION = Setting.swap_dict( # type: ignore
-            self.ACTION_TO_NUM
-        )
+        self.ACTION_TO_NUM = Setting.list_to_dict(self.ACTIONS)  # type: ignore
+        self.NUM_TO_ACTION = Setting.swap_dict(self.ACTION_TO_NUM)  # type: ignore
 
         props_config = PcgSetting.read_settings(stage_name)
-        self.PLAYER_MAX_HP = props_config.PLAYER_MAX_HP # type: ignore
+        self.PLAYER_MAX_HP = props_config.PLAYER_MAX_HP  # type: ignore
         self.IS_PLAYER_HP_LIMIT = props_config.IS_PLAYER_HP_LIMIT
         self.ENEMY_POWER = props_config.ENEMY_POWER
         self.ENEMY_POWER_MIN = props_config.ENEMY_POWER_MIN

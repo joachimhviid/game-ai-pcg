@@ -6,13 +6,13 @@ from minidungeon_pcg.pcg.setting import PcgSetting
 
 class PcgGrid(Grid):
     def __init__(self, stage_name: str, setting: PcgSetting) -> None:
-        self.texts = PcgGrid.read_grid_as_list_from_stage_name( # type: ignore
+        self.texts = PcgGrid.read_grid_as_list_from_stage_name(  # type: ignore
             stage_name
         )
-        self.setting = setting # type: ignore
-        self.H = len(self.texts) # type: ignore
-        self.W = len(self.texts[0]) # type: ignore
-        self.g = [[0] * self.W for _ in range(self.H)] # type: ignore
+        self.setting = setting  # type: ignore
+        self.H = len(self.texts)  # type: ignore
+        self.W = len(self.texts[0])  # type: ignore
+        self.g = [[0] * self.W for _ in range(self.H)]  # type: ignore
 
         self.reset()
 

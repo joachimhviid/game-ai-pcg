@@ -194,7 +194,11 @@ class StageRenderer:
 
             # draw HP bar above agent if hp info is provided
             try:
-                if agent_hp is not None and agent_max_hp is not None and agent_max_hp > 0:
+                if (
+                    agent_hp is not None
+                    and agent_max_hp is not None
+                    and agent_max_hp > 0
+                ):
                     # compute bar dimensions
                     pad = max(2, self.tile_size // 10)
                     bar_w = max(8, int(self.tile_size * 0.8))

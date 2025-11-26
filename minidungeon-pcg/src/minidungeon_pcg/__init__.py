@@ -12,7 +12,7 @@ register(
 )
 
 register(
-  id="md-pygame",
-  entry_point="minidungeon_pcg.envs:MdEnv",
-  kwargs={"stage_name": stage_name},
+    id="md-pygame",
+    entry_point="minidungeon_pcg.envs:MdEnv",
+    kwargs={"stage_name": stage_name},
 )
