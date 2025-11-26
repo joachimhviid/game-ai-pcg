@@ -1,10 +1,501 @@
-from gym_md.envs.definition import GRID_CHARACTERS
+import random
+import copy
+from typing import List, Tuple, Dict
+from collections import deque
+from os import path
 
 
 class Generator:
     """
-    Creates stage and saves to /pcg/stages
+    Creates stage using Genetic Algorithm and saves to /pcg/stages
     """
 
-    def __init__(self) -> None:
-        pass
+    def __init__(
+        self,
+        width: int = 9,
+        height: int = 9,
+        population_size: int = 50,
+        generations: int = 100,
+        mutation_rate: float = 0.15,
+        elite_size: int = 5,
+    ) -> None:
+        self.width = width
+        self.height = height
+        self.population_size = population_size
+        self.generations = generations
+        self.mutation_rate = mutation_rate
+        self.elite_size = elite_size
+        
+        # Tile types
+        self.WALL = '#'
+        self.FLOOR = '.'
+        self.START = 'S'
+        self.EXIT = 'E'
+        self.MONSTER = 'M'
+        self.POTION = 'P'
+        self.TREASURE = 'T'
+        
+        # Generation constraints
+        self.min_path_length = 8
+        self.target_monster_count = 3
+        self.target_potion_count = 1
+        self.target_treasure_count = 3
+
+    def generate_dungeon(self, stage_name: str = "generated") -> List[str]:
+        """
+        Main method to generate a dungeon using GA
+        Returns the best dungeon as a list of strings
+        """
+        print(f"Initializing GA with population size {self.population_size}...")
+        population = self.initialize_population()
+        
+        best_fitness = float('-inf')
+        best_dungeon = None
+        generations_without_improvement = 0
+        
+        for generation in range(self.generations):
+            # Evaluate fitness for all individuals
+            fitnesses = [self.calculate_fitness(dungeon) for dungeon in population]
+            
+            # Track best individual
+            max_fitness_idx = fitnesses.index(max(fitnesses))
+            if fitnesses[max_fitness_idx] > best_fitness:
+                best_fitness = fitnesses[max_fitness_idx]
+                best_dungeon = copy.deepcopy(population[max_fitness_idx])
+                generations_without_improvement = 0
+                print(f"Generation {generation}: New best fitness = {best_fitness:.2f}")
+            else:
+                generations_without_improvement += 1
+            
+            # Early stopping if no improvement
+            if generations_without_improvement > 20:
+                print(f"Early stopping at generation {generation}")
+                break
+            
+            # Create next generation
+            new_population = []
+            
+            # Elitism: keep best individuals
+            elite_indices = sorted(range(len(fitnesses)), key=lambda i: fitnesses[i], reverse=True)[:self.elite_size]
+            for idx in elite_indices:
+                new_population.append(copy.deepcopy(population[idx]))
+            
+            # Generate rest of population
+            while len(new_population) < self.population_size:
+                parent1 = self.selection(population, fitnesses)
+                parent2 = self.selection(population, fitnesses)
+                child = self.crossover(parent1, parent2)
+                child = self.mutate(child)
+                new_population.append(child)
+            
+            population = new_population
+        
+        print(f"Final best fitness: {best_fitness:.2f}")
+        
+        # Save the best dungeon
+        if best_dungeon:
+            self.save_dungeon(best_dungeon, stage_name)
+            return best_dungeon
+        else:
+            raise Exception("Failed to generate a valid dungeon")
+
+    def initialize_population(self) -> List[List[List[str]]]:
+        """Create initial random population of dungeons"""
+        population = []
+        for _ in range(self.population_size):
+            dungeon = self.create_random_dungeon()
+            population.append(dungeon)
+        return population
+
+    def create_random_dungeon(self) -> List[List[str]]:
+        """Create a single random dungeon with basic constraints"""
+        dungeon = [[self.FLOOR for _ in range(self.width)] for _ in range(self.height)]
+        
+        # Add walls (30-40% of tiles)
+        wall_count = random.randint(int(self.width * self.height * 0.3), 
+                                     int(self.width * self.height * 0.4))
+        for _ in range(wall_count):
+            x, y = random.randint(0, self.height - 1), random.randint(0, self.width - 1)
+            dungeon[x][y] = self.WALL
+        
+        # Place start and exit at opposite corners/edges
+        start_positions = [(0, 0), (0, self.width - 1), (self.height - 1, 0)]
+        exit_positions = [(self.height - 1, self.width - 1), (self.height // 2, self.width - 1)]
+        
+        start_x, start_y = random.choice(start_positions)
+        exit_x, exit_y = random.choice(exit_positions)
+        
+        dungeon[start_x][start_y] = self.START
+        dungeon[exit_x][exit_y] = self.EXIT
+        
+        # Add monsters
+        for _ in range(self.target_monster_count):
+            x, y = self.find_empty_position(dungeon)
+            if x is not None:
+                dungeon[x][y] = self.MONSTER
+        
+        # Add potions
+        for _ in range(self.target_potion_count):
+            x, y = self.find_empty_position(dungeon)
+            if x is not None:
+                dungeon[x][y] = self.POTION
+        
+        # Add treasures
+        for _ in range(self.target_treasure_count):
+            x, y = self.find_empty_position(dungeon)
+            if x is not None:
+                dungeon[x][y] = self.TREASURE
+        
+        return dungeon
+
+    def find_empty_position(self, dungeon: List[List[str]]) -> Tuple[int, int]:
+        """Find a random empty floor position"""
+        attempts = 0
+        while attempts < 100:
+            x, y = random.randint(0, self.height - 1), random.randint(0, self.width - 1)
+            if dungeon[x][y] == self.FLOOR:
+                return x, y
+            attempts += 1
+        return None, None
+
+    def calculate_fitness(self, dungeon: List[List[str]]) -> float:
+        """
+        Calculate fitness score based on multiple criteria:
+        - Path length (longer is better, but not too long)
+        - Connectivity (all floor tiles should be reachable)
+        - Enemy distribution (balanced placement)
+        - Resource availability
+        - Playability (dead ends, open space)
+        """
+        fitness = 0.0
+        
+        # Find start and exit positions
+        start_pos = self.find_tile(dungeon, self.START)
+        exit_pos = self.find_tile(dungeon, self.EXIT)
+        
+        if not start_pos or not exit_pos:
+            return -1000.0  # Invalid dungeon
+        
+        # 1. Path length fitness (weight: 30)
+        path_length, path_exists = self.calculate_path_length(dungeon, start_pos, exit_pos)
+        if not path_exists:
+            fitness -= 500  # Penalize unreachable exit
+        else:
+            # Reward moderate path lengths
+            if path_length >= self.min_path_length:
+                fitness += min(30, path_length * 2)
+            else:
+                fitness -= (self.min_path_length - path_length) * 5
+        
+        # 2. Connectivity fitness (weight: 25)
+        reachable_tiles = self.count_reachable_tiles(dungeon, start_pos)
+        total_floor_tiles = self.count_floor_tiles(dungeon)
+        if total_floor_tiles > 0:
+            connectivity_ratio = reachable_tiles / total_floor_tiles
+            fitness += connectivity_ratio * 25
+        
+        # 3. Enemy distribution fitness (weight: 20)
+        monster_positions = self.find_all_tiles(dungeon, self.MONSTER)
+        if len(monster_positions) > 0:
+            # Reward monsters being spread out
+            min_distance = self.calculate_min_distance_between_entities(monster_positions)
+            fitness += min(20, min_distance * 4)
+            
+            # Reward monsters along the path
+            if path_exists:
+                monsters_on_path = self.count_entities_near_path(dungeon, start_pos, exit_pos, self.MONSTER, distance=2)
+                fitness += monsters_on_path * 3
+        
+        # 4. Resource balance fitness (weight: 15)
+        potion_count = len(self.find_all_tiles(dungeon, self.POTION))
+        treasure_count = len(self.find_all_tiles(dungeon, self.TREASURE))
+        
+        # Penalize if too many or too few resources
+        fitness += max(0, 10 - abs(potion_count - self.target_potion_count) * 3)
+        fitness += max(0, 5 - abs(treasure_count - self.target_treasure_count) * 2)
+        
+        # 5. Playability fitness (weight: 10)
+        dead_end_count = self.count_dead_ends(dungeon)
+        fitness -= dead_end_count * 2  # Penalize too many dead ends
+        
+        # Reward open space (not too cramped)
+        open_space_ratio = total_floor_tiles / (self.width * self.height)
+        if 0.4 <= open_space_ratio <= 0.7:
+            fitness += 10
+        else:
+            fitness -= abs(0.55 - open_space_ratio) * 20
+        
+        return fitness
+
+    def calculate_path_length(self, dungeon: List[List[str]], start: Tuple[int, int], end: Tuple[int, int]) -> Tuple[int, bool]:
+        """BFS to find shortest path length from start to end"""
+        queue = deque([(start, 0)])
+        visited = {start}
+        
+        while queue:
+            (x, y), dist = queue.popleft()
+            
+            if (x, y) == end:
+                return dist, True
+            
+            for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+                nx, ny = x + dx, y + dy
+                if (0 <= nx < self.height and 0 <= ny < self.width and 
+                    (nx, ny) not in visited and dungeon[nx][ny] != self.WALL):
+                    visited.add((nx, ny))
+                    queue.append(((nx, ny), dist + 1))
+        
+        return 0, False
+
+    def count_reachable_tiles(self, dungeon: List[List[str]], start: Tuple[int, int]) -> int:
+        """Count all tiles reachable from start position"""
+        queue = deque([start])
+        visited = {start}
+        
+        while queue:
+            x, y = queue.popleft()
+            
+            for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+                nx, ny = x + dx, y + dy
+                if (0 <= nx < self.height and 0 <= ny < self.width and 
+                    (nx, ny) not in visited and dungeon[nx][ny] != self.WALL):
+                    visited.add((nx, ny))
+                    queue.append((nx, ny))
+        
+        return len(visited)
+
+    def count_floor_tiles(self, dungeon: List[List[str]]) -> int:
+        """Count all non-wall tiles"""
+        count = 0
+        for row in dungeon:
+            for tile in row:
+                if tile != self.WALL:
+                    count += 1
+        return count
+
+    def count_dead_ends(self, dungeon: List[List[str]]) -> int:
+        """Count tiles with only one exit (dead ends)"""
+        dead_ends = 0
+        for i in range(self.height):
+            for j in range(self.width):
+                if dungeon[i][j] != self.WALL:
+                    adjacent_walls = 0
+                    for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+                        nx, ny = i + dx, j + dy
+                        if (nx < 0 or nx >= self.height or ny < 0 or ny >= self.width or 
+                            dungeon[nx][ny] == self.WALL):
+                            adjacent_walls += 1
+                    if adjacent_walls >= 3:  # Only one exit
+                        dead_ends += 1
+        return dead_ends
+
+    def find_tile(self, dungeon: List[List[str]], tile_type: str) -> Tuple[int, int]:
+        """Find first occurrence of a tile type"""
+        for i in range(self.height):
+            for j in range(self.width):
+                if dungeon[i][j] == tile_type:
+                    return (i, j)
+        return None
+
+    def find_all_tiles(self, dungeon: List[List[str]], tile_type: str) -> List[Tuple[int, int]]:
+        """Find all occurrences of a tile type"""
+        positions = []
+        for i in range(self.height):
+            for j in range(self.width):
+                if dungeon[i][j] == tile_type:
+                    positions.append((i, j))
+        return positions
+
+    def calculate_min_distance_between_entities(self, positions: List[Tuple[int, int]]) -> float:
+        """Calculate minimum Manhattan distance between entities"""
+        if len(positions) < 2:
+            return 0
+        
+        min_dist = float('inf')
+        for i in range(len(positions)):
+            for j in range(i + 1, len(positions)):
+                dist = abs(positions[i][0] - positions[j][0]) + abs(positions[i][1] - positions[j][1])
+                min_dist = min(min_dist, dist)
+        return min_dist
+
+    def count_entities_near_path(self, dungeon: List[List[str]], start: Tuple[int, int], 
+                                  end: Tuple[int, int], entity_type: str, distance: int = 2) -> int:
+        """Count entities within a certain distance of the main path"""
+        # Get path tiles
+        path_tiles = self.get_path_tiles(dungeon, start, end)
+        if not path_tiles:
+            return 0
+        
+        entity_positions = self.find_all_tiles(dungeon, entity_type)
+        count = 0
+        
+        for entity_pos in entity_positions:
+            for path_pos in path_tiles:
+                manhattan_dist = abs(entity_pos[0] - path_pos[0]) + abs(entity_pos[1] - path_pos[1])
+                if manhattan_dist <= distance:
+                    count += 1
+                    break
+        
+        return count
+
+    def get_path_tiles(self, dungeon: List[List[str]], start: Tuple[int, int], 
+                       end: Tuple[int, int]) -> List[Tuple[int, int]]:
+        """Get tiles along the shortest path"""
+        queue = deque([(start, [start])])
+        visited = {start}
+        
+        while queue:
+            (x, y), path = queue.popleft()
+            
+            if (x, y) == end:
+                return path
+            
+            for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+                nx, ny = x + dx, y + dy
+                if (0 <= nx < self.height and 0 <= ny < self.width and 
+                    (nx, ny) not in visited and dungeon[nx][ny] != self.WALL):
+                    visited.add((nx, ny))
+                    queue.append(((nx, ny), path + [(nx, ny)]))
+        
+        return []
+
+    def selection(self, population: List[List[List[str]]], fitnesses: List[float]) -> List[List[str]]:
+        """Tournament selection"""
+        tournament_size = 5
+        tournament_indices = random.sample(range(len(population)), tournament_size)
+        tournament_fitnesses = [fitnesses[i] for i in tournament_indices]
+        winner_idx = tournament_indices[tournament_fitnesses.index(max(tournament_fitnesses))]
+        return copy.deepcopy(population[winner_idx])
+
+    def crossover(self, parent1: List[List[str]], parent2: List[List[str]]) -> List[List[str]]:
+        """Two-point crossover with repair"""
+        child = [[self.FLOOR for _ in range(self.width)] for _ in range(self.height)]
+        
+        # Random crossover point (horizontal split)
+        crossover_row = random.randint(1, self.height - 2)
+        
+        # Copy top part from parent1, bottom from parent2
+        for i in range(self.height):
+            for j in range(self.width):
+                if i < crossover_row:
+                    child[i][j] = parent1[i][j]
+                else:
+                    child[i][j] = parent2[i][j]
+        
+        # Repair: ensure exactly one start and one exit
+        self.repair_dungeon(child)
+        
+        return child
+
+    def mutate(self, dungeon: List[List[str]]) -> List[List[str]]:
+        """Apply random mutations to the dungeon"""
+        for i in range(self.height):
+            for j in range(self.width):
+                if random.random() < self.mutation_rate:
+                    current_tile = dungeon[i][j]
+                    
+                    # Don't mutate start or exit
+                    if current_tile in [self.START, self.EXIT]:
+                        continue
+                    
+                    # Random mutation
+                    mutation_type = random.random()
+                    if mutation_type < 0.4:
+                        dungeon[i][j] = self.WALL if current_tile != self.WALL else self.FLOOR
+                    elif mutation_type < 0.6:
+                        dungeon[i][j] = self.MONSTER
+                    elif mutation_type < 0.75:
+                        dungeon[i][j] = self.TREASURE
+                    elif mutation_type < 0.85:
+                        dungeon[i][j] = self.POTION
+                    else:
+                        dungeon[i][j] = self.FLOOR
+        
+        # Ensure valid dungeon after mutation
+        self.repair_dungeon(dungeon)
+        
+        return dungeon
+
+    def repair_dungeon(self, dungeon: List[List[str]]) -> None:
+        """Repair dungeon to ensure it has exactly one start and one exit"""
+        # Find all starts and exits
+        starts = self.find_all_tiles(dungeon, self.START)
+        exits = self.find_all_tiles(dungeon, self.EXIT)
+        
+        # Remove extra starts
+        if len(starts) > 1:
+            for i in range(1, len(starts)):
+                dungeon[starts[i][0]][starts[i][1]] = self.FLOOR
+        elif len(starts) == 0:
+            # Add a start at top-left
+            x, y = 0, 0
+            while dungeon[x][y] == self.WALL and x < self.height - 1:
+                x += 1
+            dungeon[x][y] = self.START
+        
+        # Remove extra exits
+        if len(exits) > 1:
+            for i in range(1, len(exits)):
+                dungeon[exits[i][0]][exits[i][1]] = self.FLOOR
+        elif len(exits) == 0:
+            # Add an exit at bottom-right
+            x, y = self.height - 1, self.width - 1
+            while dungeon[x][y] == self.WALL and x > 0:
+                x -= 1
+            dungeon[x][y] = self.EXIT
+
+    def save_dungeon(self, dungeon: List[List[str]], stage_name: str) -> None:
+        """Save dungeon to a .txt file in the stages directory"""
+        file_dir = path.dirname(__file__)
+        stage_file = path.join(file_dir, "stages", f"{stage_name}.txt")
+    
+        with open(stage_file, 'w') as f:
+            for row in dungeon:
+                f.write(''.join(row) + '\n')
+    
+        print(f"Dungeon saved to {stage_file}")
+    
+    # Also save the config file
+        self.save_config(stage_name)
+
+    def print_dungeon(self, dungeon: List[List[str]]) -> None:
+        """Print dungeon to console for debugging"""
+        for row in dungeon:
+            print(''.join(row))
+        print()
+
+    def save_config(self, stage_name: str) -> None:
+        """Save configuration file for the generated stage"""
+        import json
+
+        file_dir = path.dirname(__file__)
+        config_file = path.join(file_dir, "props", f"{stage_name}.json") 
+        
+        with open(config_file, 'w') as f:
+            json.dump(self.config, f, indent=2)
+    
+        print(f"Config saved to {config_file}")
+    
+    config = {
+        "PLAYER_MAX_HP": 30,
+        "IS_PLAYER_HP_LIMIT": True,
+        "ENEMY_POWER": 10,
+        "ENEMY_POWER_MIN": 5,
+        "ENEMY_POWER_MAX": 15,
+        "IS_ENEMY_POWER_RANDOM": True,
+        "POTION_POWER": 10,
+        "DISTANCE_INF": 1000,
+        "RENDER_WAIT_TIME": 0.05,
+        "REWARDS": {
+            "TURN": 1,
+            "EXIT": 20,
+            "KILL": 4,
+            "TREASURE": 3,
+            "POTION": 1,
+            "DEAD": -20
+        }
+    }
+    
+    
+    
+    
