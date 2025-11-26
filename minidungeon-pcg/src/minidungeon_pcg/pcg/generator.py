@@ -14,10 +14,10 @@ class Generator:
         self,
         width: int = 9,
         height: int = 9,
-        population_size: int = 50,
-        generations: int = 100,
+        population_size: int = 150,
+        generations: int = 300,
         mutation_rate: float = 0.15,
-        elite_size: int = 5,
+        elite_size: int = 10,
     ) -> None:
         self.width = width
         self.height = height
@@ -68,9 +68,9 @@ class Generator:
                 generations_without_improvement += 1
             
             # Early stopping if no improvement
-            if generations_without_improvement > 20:
-                print(f"Early stopping at generation {generation}")
-                break
+            # if generations_without_improvement > 100:
+            #    print(f"Early stopping at generation {generation}")
+            #    break
             
             # Create next generation
             new_population = []
@@ -102,8 +102,12 @@ class Generator:
     def initialize_population(self) -> List[List[List[str]]]:
         """Create initial random population of dungeons"""
         population = []
-        for _ in range(self.population_size):
-            dungeon = self.create_random_dungeon()
+        for i in range(self.population_size):
+            # Use structured generation for 70% of population
+            if i < int(self.population_size * 0.7):
+                dungeon = self.create_structured_dungeon()
+            else:
+                dungeon = self.create_random_dungeon()
             population.append(dungeon)
         return population
 
@@ -111,9 +115,9 @@ class Generator:
         """Create a single random dungeon with basic constraints"""
         dungeon = [[self.FLOOR for _ in range(self.width)] for _ in range(self.height)]
         
-        # Add walls (30-40% of tiles)
-        wall_count = random.randint(int(self.width * self.height * 0.3), 
-                                     int(self.width * self.height * 0.4))
+        # Add walls (50-60% of tiles)
+        wall_count = random.randint(int(self.width * self.height * 0.5), 
+                                     int(self.width * self.height * 0.6))
         for _ in range(wall_count):
             x, y = random.randint(0, self.height - 1), random.randint(0, self.width - 1)
             dungeon[x][y] = self.WALL
@@ -127,6 +131,81 @@ class Generator:
         
         dungeon[start_x][start_y] = self.START
         dungeon[exit_x][exit_y] = self.EXIT
+        
+        # Add monsters
+        for _ in range(self.target_monster_count):
+            x, y = self.find_empty_position(dungeon)
+            if x is not None:
+                dungeon[x][y] = self.MONSTER
+        
+        # Add potions
+        for _ in range(self.target_potion_count):
+            x, y = self.find_empty_position(dungeon)
+            if x is not None:
+                dungeon[x][y] = self.POTION
+        
+        # Add treasures
+        for _ in range(self.target_treasure_count):
+            x, y = self.find_empty_position(dungeon)
+            if x is not None:
+                dungeon[x][y] = self.TREASURE
+        
+        return dungeon
+    
+    def create_structured_dungeon(self) -> List[List[str]]:
+        """Create a dungeon with corridor-like structures for better maze feel"""
+        # Start with all walls
+        dungeon = [[self.WALL for _ in range(self.width)] for _ in range(self.height)]
+        
+        # Create random walk corridors
+        num_corridors = random.randint(3, 5)
+        for _ in range(num_corridors):
+            # Random starting point
+            x, y = random.randint(1, self.height - 2), random.randint(1, self.width - 2)
+            corridor_length = random.randint(8, 15)
+            
+            for step in range(corridor_length):
+                # Carve out floor
+                dungeon[x][y] = self.FLOOR
+                
+                # Sometimes carve adjacent tiles for wider corridors
+                if random.random() < 0.3:
+                    for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+                        nx, ny = x + dx, y + dy
+                        if 0 <= nx < self.height and 0 <= ny < self.width:
+                            dungeon[nx][ny] = self.FLOOR
+                
+                # Random walk
+                direction = random.choice([(0, 1), (0, -1), (1, 0), (-1, 0)])
+                x = max(1, min(self.height - 2, x + direction[0]))
+                y = max(1, min(self.width - 2, y + direction[1]))
+        
+        # Create a few small rooms
+        num_rooms = random.randint(2, 4)
+        for _ in range(num_rooms):
+            room_x = random.randint(1, self.height - 4)
+            room_y = random.randint(1, self.width - 4)
+            room_w = random.randint(2, 3)
+            room_h = random.randint(2, 3)
+            
+            for i in range(room_h):
+                for j in range(room_w):
+                    if room_x + i < self.height and room_y + j < self.width:
+                        dungeon[room_x + i][room_y + j] = self.FLOOR
+        
+        # Place start and exit
+        start_positions = [(1, 1), (1, self.width - 2), (self.height - 2, 1)]
+        exit_positions = [(self.height - 2, self.width - 2), (self.height // 2, self.width - 2)]
+        
+        start_x, start_y = random.choice(start_positions)
+        exit_x, exit_y = random.choice(exit_positions)
+        
+        dungeon[start_x][start_y] = self.START
+        dungeon[exit_x][exit_y] = self.EXIT
+        
+        # Ensure path exists, if not carve one
+        if not self.calculate_path_length(dungeon, (start_x, start_y), (exit_x, exit_y))[1]:
+            self.carve_path(dungeon, (start_x, start_y), (exit_x, exit_y))
         
         # Add monsters
         for _ in range(self.target_monster_count):
@@ -209,23 +288,62 @@ class Generator:
         # 4. Resource balance fitness (weight: 15)
         potion_count = len(self.find_all_tiles(dungeon, self.POTION))
         treasure_count = len(self.find_all_tiles(dungeon, self.TREASURE))
+        monster_count = len(self.find_all_tiles(dungeon, self.MONSTER))
+
+        # HEAVILY penalize too many monsters
+        if monster_count > self.target_monster_count + 2:
+            fitness -= (monster_count - self.target_monster_count - 2) * 50  # Severe penalty
         
         # Penalize if too many or too few resources
         fitness += max(0, 10 - abs(potion_count - self.target_potion_count) * 3)
         fitness += max(0, 5 - abs(treasure_count - self.target_treasure_count) * 2)
+        fitness += max(0, 10 - abs(monster_count - self.target_monster_count) * 5)
         
         # 5. Playability fitness (weight: 10)
         dead_end_count = self.count_dead_ends(dungeon)
         fitness -= dead_end_count * 2  # Penalize too many dead ends
         
-        # Reward open space (not too cramped)
-        open_space_ratio = total_floor_tiles / (self.width * self.height)
-        if 0.4 <= open_space_ratio <= 0.7:
-            fitness += 10
+        # 6. Maze-like quality (weight: 15) - NEW
+        wall_count = sum(row.count(self.WALL) for row in dungeon)
+        total_tiles = self.width * self.height
+        wall_ratio = wall_count / total_tiles
+
+        # Reward 50-65% wall coverage for maze feel
+        if 0.50 <= wall_ratio <= 0.65:
+            fitness += 15
         else:
-            fitness -= abs(0.55 - open_space_ratio) * 20
+            fitness -= abs(0.575 - wall_ratio) * 30
+
+        # Reward longer paths (more maze-like)
+        if path_exists and path_length > self.min_path_length + 5:
+            fitness += min(10, (path_length - self.min_path_length) * 1.5)
         
         return fitness
+    
+    def carve_path(self, dungeon: List[List[str]], start: Tuple[int, int], end: Tuple[int, int]) -> None:
+        """Carve a path from start to end if none exists"""
+        x, y = start
+        target_x, target_y = end
+        
+        while (x, y) != (target_x, target_y):
+            dungeon[x][y] = self.FLOOR
+            
+            # Move toward target
+            if x < target_x:
+                x += 1
+            elif x > target_x:
+                x -= 1
+            elif y < target_y:
+                y += 1
+            elif y > target_y:
+                y -= 1
+            
+            # Occasionally move randomly for more interesting paths
+            if random.random() < 0.2:
+                direction = random.choice([(0, 1), (0, -1), (1, 0), (-1, 0)])
+                nx, ny = x + direction[0], y + direction[1]
+                if 0 <= nx < self.height and 0 <= ny < self.width:
+                    x, y = nx, ny
 
     def calculate_path_length(self, dungeon: List[List[str]], start: Tuple[int, int], end: Tuple[int, int]) -> Tuple[int, bool]:
         """BFS to find shortest path length from start to end"""
@@ -398,23 +516,40 @@ class Generator:
                     if current_tile in [self.START, self.EXIT]:
                         continue
                     
-                    # Random mutation
+                    # Count current entities
+                    current_monsters = len(self.find_all_tiles(dungeon, self.MONSTER))
+                    current_potions = len(self.find_all_tiles(dungeon, self.POTION))
+                    current_treasures = len(self.find_all_tiles(dungeon, self.TREASURE))
+                    
+                    # Random mutation with constraints
                     mutation_type = random.random()
-                    if mutation_type < 0.4:
-                        dungeon[i][j] = self.WALL if current_tile != self.WALL else self.FLOOR
-                    elif mutation_type < 0.6:
+                    if mutation_type < 0.3:  # REDUCED from 0.4 - less wall removal
+                        # Toggle wall/floor (but prefer keeping walls)
+                        if current_tile == self.WALL:
+                            # Only remove wall 30% of the time
+                            if random.random() < 0.3:
+                                dungeon[i][j] = self.FLOOR
+                        else:
+                            dungeon[i][j] = self.WALL
+                    elif mutation_type < 0.4 and current_monsters < self.target_monster_count + 2:
+                        # Add monster only if under limit
                         dungeon[i][j] = self.MONSTER
-                    elif mutation_type < 0.75:
+                    elif mutation_type < 0.5 and current_treasures < self.target_treasure_count + 1:
+                        # Add treasure only if under limit
                         dungeon[i][j] = self.TREASURE
-                    elif mutation_type < 0.85:
+                    elif mutation_type < 0.6 and current_potions < self.target_potion_count + 1:
+                        # Add potion only if under limit
                         dungeon[i][j] = self.POTION
                     else:
-                        dungeon[i][j] = self.FLOOR
+                        # Convert to floor (less often now)
+                        if current_tile != self.WALL:
+                            dungeon[i][j] = self.FLOOR
         
         # Ensure valid dungeon after mutation
         self.repair_dungeon(dungeon)
         
         return dungeon
+            
 
     def repair_dungeon(self, dungeon: List[List[str]]) -> None:
         """Repair dungeon to ensure it has exactly one start and one exit"""
@@ -443,6 +578,28 @@ class Generator:
             while dungeon[x][y] == self.WALL and x > 0:
                 x -= 1
             dungeon[x][y] = self.EXIT
+        
+        # NEW: Remove excess monsters
+        monsters = self.find_all_tiles(dungeon, self.MONSTER)
+        if len(monsters) > self.target_monster_count + 2:
+            # Keep only target + 2 monsters, remove the rest
+            monsters_to_remove = monsters[self.target_monster_count + 2:]
+            for pos in monsters_to_remove:
+                dungeon[pos[0]][pos[1]] = self.FLOOR
+        
+        # NEW: Remove excess treasures
+        treasures = self.find_all_tiles(dungeon, self.TREASURE)
+        if len(treasures) > self.target_treasure_count + 1:
+            treasures_to_remove = treasures[self.target_treasure_count + 1:]
+            for pos in treasures_to_remove:
+                dungeon[pos[0]][pos[1]] = self.FLOOR
+        
+        # NEW: Remove excess potions
+        potions = self.find_all_tiles(dungeon, self.POTION)
+        if len(potions) > self.target_potion_count + 1:
+            potions_to_remove = potions[self.target_potion_count + 1:]
+            for pos in potions_to_remove:
+                dungeon[pos[0]][pos[1]] = self.FLOOR
 
     def save_dungeon(self, dungeon: List[List[str]], stage_name: str) -> None:
         """Save dungeon to a .txt file in the stages directory"""
