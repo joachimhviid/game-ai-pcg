@@ -113,6 +113,11 @@ class MdAgent:
             )
 
         act_idx = int(resolved_low_level)
+        
+        print(f"Selected / Resolved: {selected_action} / {act_idx}")
+        print(f"Moving towards {mapping[selected_action][0]} while {"avoiding" if mapping[selected_action][1] else "not avoiding"} monsters")
+        direction_map = {1: "UP", 2: "DOWN", 3: "LEFT", 4: "RIGHT"}
+        print(f"Direction: {direction_map[act_idx]}")
 
         # now perform the low-level action (same logic as before)
         reward = -0.01

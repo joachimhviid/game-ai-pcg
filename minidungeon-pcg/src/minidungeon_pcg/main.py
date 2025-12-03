@@ -1,28 +1,31 @@
 import gymnasium as gym
+import numpy as np
 import random
 
 env = gym.make("md-pygame", render_mode="human")
-# env = gym.make("md-pcg", render_mode="human")
 
-LOOP: int = 100
-TRY_OUT: int = 100
+treasure_collector_persona = np.array(
+    [0.0, 0.9, 1.0, 0.0, 0.7, 0.6, 0.8], dtype=np.float32
+)
+
+EPISODES: int = 100
+MAX_STEPS: int = 100
 
 
 def main():
-    for _ in range(TRY_OUT):
+    for _ in range(EPISODES):
         observation, info = env.reset()
         reward_sum: float = 0.0
-        for i in range(LOOP):
+        
+        for i in range(MAX_STEPS):
             env.render()
-            # sample a discrete action from the environment's action space
-            action = env.action_space.sample()
-            observation, reward, terminated, truncated, info = env.step(action)
+            observation, reward, terminated, truncated, info = env.step(treasure_collector_persona)
             reward_sum += float(reward)
             done = terminated or truncated
 
             if done:
                 env.render()
+                print(reward_sum)
                 break
 
-        print(reward_sum)
     env.close()
