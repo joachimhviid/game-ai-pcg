@@ -2,26 +2,28 @@
 
 % The purpose of this section is make the reader interested and informed in the project.
 
-Alot of dungeon crawler games, procedurally generate their dungeon layouts, but this can result in repetitive, easy or even frustrating layouts. A
-good example of this is the game called "The binding of Issac" which is a roguelike game where the dungeon layouts are procedurally generated, and 
-with their downloadable content (DLC's) they have added alot of frustruating levels that are too hard for an average player to complete.
+Procedural Content Generation (PCG) is a mechanic in many modern games, allowing developers to create
+vast amounts of content without manual design. However while PCG offers variety, it can result in layouts
+that are repetitive, easy or unfairly difficult. An example of this of this issue is observed in the rougelike game,
+The Binding of Isaac \cite{TheBindingOfIsaac}. While the base game utilizes procedural generation effectively, their downloadable content (DLC)
+introduced layouts and mechanics that some players found frustratingly difficult, surpassing the skill level
+of the average user. 
 
-This problem can occur in other games as well, but the binding of Issac is a good example of it and leads to a lot of frustration, negative reviews
-and in the end lower sales. Its important to note that this problem is not only limited to dungeon crawler games, but all types of games and its a
-field thats been studied for a long time, but still not fully understood, because its a complex problem that involves a lot of different factors, including human factors.
-With new technologies, understanding of players and the help of AI, we can now start to understand this problem and create games that are more engaging and fun to play.
+This imbalance leads to player frustration, negative reviews and ultimately, lower commercial 
+performance. The issue is not unique to The Binding of Isaac, it's a challenge across not only the genre 
+but many games as well, because it involves complex interactions between game design and human factors. With
+the advancement of AI and player modelling, there is an opportunity to create a system that can adapt to a players needs.
 
-We want to explore the use of genetic algorithms to generate dungeon layouts that are more engaging and fun to play, and with the use of AI, experience testing and 
-project Minidungeons by Antonios Liapis \cite{liapis_minidungeons} we can hope to achiece a better understanding of the problem and be a part to 
-help create more engaging and fun dungeon crawler games.
+This project explores the implementation of Genetic Algorithms (GA) to generate dungeon layouts that 
+tries to prioritize player engagement together with difficulty to create good flow. Building on the Minidungeons
+framework by Antonios Liapis \cite{liapis_minidungeons}, we aim to configure a GA that iteratively creates 
+layouts for achieving an optimal balance between challenge and player skill.
 
-
+This study tries to uncover the hypothesis (H) that a genetic algorithm configured 
+to balance challenge and skill will yield higher engagement and smoother gameplay flow than comparable
+static generation methods.
 
 \begin{itemize}
-	%\item Objectives of the report: what is your actual goal? What are you hoping to achieve? About one paragraph.
-	%\item What is the problem, why is it a problem, and why is it important? (Is it something that hasn’t been studied yet? Is there an unsolved issue? Previous work presents inconclusive/contradicting results? Is there a new technology we can leverage to gain more knowledge?). One or two paragraphs.
-	%\item Objectives of the report: what is your actual goal? What are you hoping to achieve? About one paragraph.
-	%\item How do you plan on achieving your goal? This is where you want do define your research questions and hypotheses. When you define these, you are forming the basis of your project, and should be the focus of the rest of the text. If you have a very broad RQ, try to break it down in smaller, more quantifiable questions. As an example:
 	\item H: If a genetic algorithm is configured to iteratively search for dungeon layouts that achieve a balance between 
 	challenge against player skill, then the resulting procedural elves will yield a heigher engagement, create smoother flow and
 	better gameplay outcomes, than a comparable static generation method.
