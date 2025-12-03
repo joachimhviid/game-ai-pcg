@@ -1,5 +1,5 @@
 from collections import deque
-from typing import Iterable, List, Optional, Sequence, Set, Tuple
+from typing import List, Optional, Sequence, Set, Tuple
 
 
 Position = Tuple[int, int]
@@ -25,9 +25,9 @@ class Pather:
         pass
 
     def _grid_size(self, grid: Sequence[Sequence[str]]) -> Tuple[int, int]:
-        h = len(grid)
-        w = 0 if h == 0 else max(len(row) for row in grid)
-        return w, h
+        height = len(grid)
+        width = 0 if height == 0 else max(len(row) for row in grid)
+        return width, height
 
     def bfs(
         self,
@@ -40,34 +40,34 @@ class Pather:
         - distances: dict[(x,y)] -> distance
         - prev: dict[(x,y)] -> previous (x,y) on path from start
         """
-        w, h = self._grid_size(grid)
-        sx, sy = start
-        if w == 0 or h == 0:
+        width, height = self._grid_size(grid)
+        start_x, start_y = start
+        if width == 0 or height == 0:
             return {}, {}
 
         distances = {}
         prev = {}
-        q = deque()
-        q.append((sx, sy))
-        distances[(sx, sy)] = 0
+        queue = deque()
+        queue.append((start_x, start_y))
+        distances[(start_x, start_y)] = 0
 
-        while q:
-            x, y = q.popleft()
-            d = distances[(x, y)]
+        while queue:
+            x, y = queue.popleft()
+            distance = distances[(x, y)]
             for dx, dy in ((0, -1), (0, 1), (-1, 0), (1, 0)):
-                nx, ny = x + dx, y + dy
-                if not (0 <= nx < w and 0 <= ny < h):
+                next_x, next_y = x + dx, y + dy
+                if not (0 <= next_x < width and 0 <= next_y < height):
                     continue
-                if (nx, ny) in distances:
+                if (next_x, next_y) in distances:
                     continue
-                tch = grid[ny][nx] if nx < len(grid[ny]) else " "
-                if tch == "#":
+                tile_char = grid[next_y][next_x] if next_x < len(grid[next_y]) else " "
+                if tile_char == "#":
                     continue
-                if avoid_monsters and tch == "M":
+                if avoid_monsters and tile_char == "M":
                     continue
-                distances[(nx, ny)] = d + 1
-                prev[(nx, ny)] = (x, y)
-                q.append((nx, ny))
+                distances[(next_x, next_y)] = distance + 1
+                prev[(next_x, next_y)] = (x, y)
+                queue.append((next_x, next_y))
 
         return distances, prev
 
@@ -146,12 +146,12 @@ class Pather:
         `target_chars` tile. Action mapping: 1 up, 2 down, 3 left, 4 right.
         Returns 0 (noop) if no move is possible or no path exists.
         """
-        nxt = self.next_step(grid, start, target_chars, avoid_monsters=avoid_monsters)
-        if nxt is None:
+        next = self.next_step(grid, start, target_chars, avoid_monsters=avoid_monsters)
+        if next is None:
             return 0
-        sx, sy = start
-        nx, ny = nxt
-        dx, dy = nx - sx, ny - sy
+        start_x, start_y = start
+        next_x, next_y = next
+        dx, dy = next_x - start_x, next_y - start_y
         if (dx, dy) == (0, -1):
             return 1
         if (dx, dy) == (0, 1):

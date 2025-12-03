@@ -1,7 +1,7 @@
 from typing import Any
 from pathlib import Path
 import gymnasium as gym
-from minidungeon_pcg.envs.agent.md_agent import MdAgent
+from minidungeon_pcg.envs.agent.md_treasure_agent import MdTreasureAgent
 from minidungeon_pcg.pcg.stage_renderer import StageRenderer
 import numpy as np
 import pygame
@@ -19,7 +19,7 @@ class MdEnv(gym.Env[np.ndarray, np.ndarray]):
         self.window = None
         self.clock = None
 
-        self.agent = MdAgent(10, debug=self.debug)
+        self.agent = MdTreasureAgent(debug=self.debug)
         self._closed = False
 
         self.stage_renderer = StageRenderer(stage_name, window_size=self.window_size)
