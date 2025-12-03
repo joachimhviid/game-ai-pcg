@@ -1,20 +1,31 @@
 import numpy as np
 import random
 from .pather import Pather
+from minidungeon_pcg.envs.settings import Settings
 
 
 class MdAgent:
-    def __init__(self, max_hp: int, debug: bool = False) -> None:
+    def __init__(self, debug: bool = False) -> None:
         """Agent helper that implements environment actions and movement logic.
 
         A `Pather` instance is attached as `self.pather` to provide BFS-based
         pathfinding helpers for higher-level action decisions.
         """
-        self.max_hp = max_hp
+        self.max_hp = Settings.AGENT_MAX_HEALTH
         self.hp = self.max_hp
         self.position = None
         self.pather = Pather()
         self.debug = debug
+        self.action_mapping = {
+            0: ({"M"}, False),
+            1: ({"T"}, False),
+            2: ({"T"}, True),
+            3: ({"P"}, False),
+            4: ({"P"}, True),
+            5: ({"E"}, False),
+            6: ({"E"}, True),
+        }
+        self.deltas = {1: (0, -1), 2: (0, 1), 3: (-1, 0), 4: (1, 0)}
 
     def next_action_to(
         self, grid, target_chars: set, avoid_monsters: bool = False
@@ -61,19 +72,9 @@ class MdAgent:
             random.shuffle(inds)
             candidate_indices.extend(inds)
 
-        mapping = {
-            0: ({"M"}, False),
-            1: ({"T"}, False),
-            2: ({"T"}, True),
-            3: ({"P"}, False),
-            4: ({"P"}, True),
-            5: ({"E"}, False),
-            6: ({"E"}, True),
-        }
-
         start = self.position if self.position is not None else (0, 0)
         for idx in candidate_indices:
-            target_chars, avoid = mapping[idx]
+            target_chars, avoid = self.action_mapping[idx]
             move = self.pather.next_action(
                 grid, start, set(target_chars), avoid_monsters=avoid
             )
@@ -93,31 +94,16 @@ class MdAgent:
         terminated, truncated, info, grid, hp).
         """
         # resolve high-level into low-level move
-        mapping = {
-            0: ({"M"}, False),
-            1: ({"T"}, False),
-            2: ({"T"}, True),
-            3: ({"P"}, False),
-            4: ({"P"}, True),
-            5: ({"E"}, False),
-            6: ({"E"}, True),
-        }
-
-        if selected_action is None or selected_action not in mapping:
+        if selected_action is None or selected_action not in self.action_mapping:
             resolved_low_level = 0
         else:
-            target_chars, avoid = mapping[selected_action]
+            target_chars, avoid = self.action_mapping[selected_action]
             start = self.position if self.position is not None else (0, 0)
             resolved_low_level = self.pather.next_action(
                 grid, start, set(target_chars), avoid_monsters=avoid
             )
 
         act_idx = int(resolved_low_level)
-        
-        print(f"Selected / Resolved: {selected_action} / {act_idx}")
-        print(f"Moving towards {mapping[selected_action][0]} while {"avoiding" if mapping[selected_action][1] else "not avoiding"} monsters")
-        direction_map = {1: "UP", 2: "DOWN", 3: "LEFT", 4: "RIGHT"}
-        print(f"Direction: {direction_map[act_idx]}")
 
         # now perform the low-level action (same logic as before)
         reward = -0.01
@@ -127,20 +113,19 @@ class MdAgent:
         if self.position is None:
             self.position = (0, 0)
 
-        ax, ay = self.position
-        deltas = {1: (0, -1), 2: (0, 1), 3: (-1, 0), 4: (1, 0)}
+        current_x, current_y = self.position
 
-        if act_idx in deltas:
-            dx, dy = deltas[act_idx]
-            nx, ny = ax + dx, ay + dy
-            if 0 <= nx < w and 0 <= ny < h:
-                target = grid[ny][nx] if nx < len(grid[ny]) else " "
+        if act_idx in self.deltas:
+            dx, dy = self.deltas[act_idx]
+            next_x, next_y = current_x + dx, current_y + dy
+            if 0 <= next_x < w and 0 <= next_y < h:
+                target = grid[next_y][next_x] if next_x < len(grid[next_y]) else " "
                 if target != "#":
                     if target == "M":
                         # combat: player takes damage but defeats the monster
-                        self.hp -= 5
-                        self.position = (nx, ny)
-                        grid[ny][nx] = "."
+                        self.hp -= Settings.MONSTER_DAMAGE
+                        self.position = (next_x, next_y)
+                        grid[next_y][next_x] = "."
                         if self.hp <= 0:
                             # player died — do not award kill reward
                             terminated = True
@@ -148,19 +133,18 @@ class MdAgent:
                             # award for defeating a monster
                             reward += 5.0
                     else:
-                        self.position = (nx, ny)
+                        self.position = (next_x, next_y)
                         if target == "T":
                             reward += 1.0
-                            grid[ny][nx] = "."
+                            grid[next_y][next_x] = "."
                         if target == "P":
                             # restore some HP (to a maximum) and reward the pickup
-                            heal = 5
-                            new_hp = min(self.max_hp, self.hp + heal)
+                            new_hp = min(self.max_hp, self.hp + Settings.POTION_HEAL_AMOUNT)
                             healed_amount = new_hp - self.hp
                             self.hp = new_hp
                             if healed_amount > 0:
                                 reward += 2.0
-                            grid[ny][nx] = "."
+                            grid[next_y][next_x] = "."
                         if target == "E":
                             reward += 10.0
                             terminated = True
@@ -169,20 +153,18 @@ class MdAgent:
             else:
                 reward += -0.1
         elif act_idx == 5:
-            cx, cy = ax, ay
-            if 0 <= cx < w and 0 <= cy < h:
-                if grid[cy][cx] == "T":
+            if 0 <= current_x < w and 0 <= current_y < h:
+                if grid[current_y][current_xcx] == "T":
                     reward += 1.0
-                    grid[cy][cx] = "."
-                elif grid[cy][cx] == "P":
+                    grid[current_y][current_x] = "."
+                elif grid[current_y][current_x] == "P":
                     # pick up potion on current tile
-                    heal = 5
-                    new_hp = min(self.max_hp, self.hp + heal)
+                    new_hp = min(self.max_hp, self.hp + Settings.POTION_HEAL_AMOUNT)
                     healed_amount = new_hp - self.hp
                     self.hp = new_hp
                     if healed_amount > 0:
                         reward += 2.0
-                    grid[cy][cx] = "."
+                    grid[current_y][current_x] = "."
 
         # clamp reward to reasonable bounds and optionally log for debugging
         reward = float(reward)

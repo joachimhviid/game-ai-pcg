@@ -1,12 +1,7 @@
 import gymnasium as gym
-import numpy as np
 import random
 
 env = gym.make("md-pygame", render_mode="human")
-
-treasure_collector_persona = np.array(
-    [0.0, 0.9, 1.0, 0.0, 0.7, 0.6, 0.8], dtype=np.float32
-)
 
 EPISODES: int = 100
 MAX_STEPS: int = 100
@@ -19,7 +14,8 @@ def main():
         
         for i in range(MAX_STEPS):
             env.render()
-            observation, reward, terminated, truncated, info = env.step(treasure_collector_persona)
+            action = env.action_space.sample()
+            observation, reward, terminated, truncated, info = env.step(action)
             reward_sum += float(reward)
             done = terminated or truncated
 
