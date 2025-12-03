@@ -2,7 +2,6 @@ from typing import Any
 from pathlib import Path
 import gymnasium as gym
 from minidungeon_pcg.envs.agent.md_treasure_agent import MdTreasureAgent
-# from minidungeon_pcg.envs.agent.md_agent import MdAgent
 from minidungeon_pcg.pcg.stage_renderer import StageRenderer
 import numpy as np
 import pygame

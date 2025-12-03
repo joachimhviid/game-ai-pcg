@@ -1,5 +1,5 @@
 from collections import deque
-from typing import Iterable, List, Optional, Sequence, Set, Tuple
+from typing import List, Optional, Sequence, Set, Tuple
 
 
 Position = Tuple[int, int]

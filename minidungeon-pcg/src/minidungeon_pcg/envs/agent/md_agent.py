@@ -139,7 +139,9 @@ class MdAgent:
                             grid[next_y][next_x] = "."
                         if target == "P":
                             # restore some HP (to a maximum) and reward the pickup
-                            new_hp = min(self.max_hp, self.hp + Settings.POTION_HEAL_AMOUNT)
+                            new_hp = min(
+                                self.max_hp, self.hp + Settings.POTION_HEAL_AMOUNT
+                            )
                             healed_amount = new_hp - self.hp
                             self.hp = new_hp
                             if healed_amount > 0:

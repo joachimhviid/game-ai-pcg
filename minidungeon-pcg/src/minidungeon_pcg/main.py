@@ -1,5 +1,4 @@
 import gymnasium as gym
-import random
 
 env = gym.make("md-pygame", render_mode="human")
 
@@ -11,7 +10,7 @@ def main():
     for _ in range(EPISODES):
         observation, info = env.reset()
         reward_sum: float = 0.0
-        
+
         for i in range(MAX_STEPS):
             env.render()
             action = env.action_space.sample()
