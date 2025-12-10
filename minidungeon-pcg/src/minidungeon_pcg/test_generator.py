@@ -1,5 +1,5 @@
 import sys
-import os
+from pathlib import Path
 
 # Ensure we can import from src
 sys.path.insert(0, "src")
@@ -56,11 +56,12 @@ def main():
     # 5. Test Saving/Loading Model
     print("\n" + "=" * 60)
     print("[Test 4] Saving & Loading Generator State...")
-    generator.save_model("test_gen_config.json")
+    model_path = Path("test_gen_config.json")
+    generator.save_model(model_path)
     
     # Create new generator and load settings
     gen2 = Generator()
-    gen2.load_model("test_gen_config.json")
+    gen2.load_model(model_path)
     
     if gen2.config['target_monster_count'] == generator.config['target_monster_count']:
         print("✓ Model saved and loaded correctly.")
@@ -68,8 +69,8 @@ def main():
         print("x Model load failed.")
 
     # Cleanup test files (optional, comment out if you want to inspect them)
-    # if os.path.exists("src/minidungeon_pcg/test_gen_config.json"):
-    #     os.remove("src/minidungeon_pcg/test_gen_config.json")
+    if model_path.exists():
+        model_path.unlink()
 
     print("\n" + "=" * 60)
     print("All Tests Complete.")

@@ -27,9 +27,9 @@ __pycache__/
 *.pyc
 .venv/
 .env/
-minidungeon-pcg/src/minidungeon_pcg/pcg/stages/ga_generated.txt
+minidungeon-pcg/src/minidungeon_pcg/pcg/stages/
 !minidungeon-pcg/src/minidungeon_pcg/pcg/stages/.gitkeep
-minidungeon-pcg/src/minidungeon_pcg/pcg/props/ga_generated.json
+minidungeon-pcg/src/minidungeon_pcg/pcg/props/
 !minidungeon-pcg/src/minidungeon_pcg/pcg/props/.gitkeep
 minidungeon-pcg/.python-version
 minidungeon-pcg/**/install-pyenv-win.ps1
