@@ -115,6 +115,7 @@ class StageRenderer:
         agent_pos: Optional[Tuple[int, int]] = None,
         agent_hp: Optional[int] = None,
         agent_max_hp: Optional[int] = None,
+        agent_mode: Optional[bool] = None,
     ):
         """Draw the stage into the provided surface. Coordinates are grid-based (x,y).
 
@@ -229,5 +230,16 @@ class StageRenderer:
 
                     # border
                     pygame.draw.rect(surface, (30, 30, 30), bg_rect, 1)
+            except Exception:
+                pass
+            
+            # draw survival mode indicator
+            try:
+                if agent_mode is not None and agent_mode:
+                    # draw a red border/aura around the agent to indicate survival mode
+                    cx = int((ax + 0.5) * self.tile_size)
+                    cy = int((ay + 0.5) * self.tile_size)
+                    radius = max(4, self.tile_size // 2)
+                    pygame.draw.circle(surface, (200, 50, 50), (cx, cy), radius, 3)
             except Exception:
                 pass

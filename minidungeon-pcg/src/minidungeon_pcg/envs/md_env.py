@@ -162,6 +162,7 @@ class MdEnv(gym.Env[np.ndarray, np.ndarray]):
                 agent_pos=self.agent.position,
                 agent_hp=getattr(self.agent, "hp", None),
                 agent_max_hp=getattr(self.agent, "max_hp", None),
+                agent_mode=getattr(self.agent, "is_survival_mode", False),
             )
         except Exception:
             # fail silently for rendering so render() doesn't crash the caller

@@ -1,67 +1,85 @@
 
 \section{Method/Implementation}
 
-This is likely going to be the largest part of the report. Here you want do describe the full process you went through in implementing the solution to your problem. Ideally this should be detailed enough that somebody else would be able to reproduce your work in case you drop dead. Keep in mind that, while we provide a general structure here, it could need some modifications depending on the course you are writing for.
+\subsection{Iteration 1: Baseline Setup}
+Initial iteration was just Antonios Liapis' MiniDungeons project ported to Python by ganyariya.
 
-\begin{displayquote}
-{\color{red}
-Warning: depending on the course, coding highlights should also be included. Usually only highlighting solutions to specifically complex problems.
-}
-\end{displayquote}
+Purpose: Baseline proof of concept that the project works.
 
-\subsection{Iteration X}
-
-You will often go through various iterations of product/game design, duplicate this subsection for each iteration before the final one. 
-
+Work:  
 \begin{itemize}
-	\item Usually, iteration 1 would be a low fidelity prototype.
-	\item Iteration 2 could be a high-fidelity prototype (vertical slice or functional prototype).
-	\item Iteration 3 or later are refinements (extended functionality, improvements/polish, usability tweaks, bug-fixing) or the final product.
+	\item Setup poetry project.
+	\item Patch \texttt{gym\_md} to work with latest version of gymnasium.
+	\item Ensure we are able to run custom maps.
 \end{itemize}
 
-\subsubsection{About}
+\subsection{Iteration 2: Refactored Environment and Agent}
+Second iteration involved refactoring the MiniDungeons environment. 
 
-Describe what this iteration was all about.
+Purpose: Improve our ability to interact with the environment.
 
+Work:
 \begin{itemize}
-	\item What is the purpose of this iteration?
-	\item What were the goals?
-	\item Describe and justify design decisions. For example, “we implemented feature X because it relates to gamification concept Y”, or “in the previous iteration we identified issues with the user interface, so we reworked by changing X, Y, and Z.”
-	\item Include images/sketches. 
+	\item Recreated \texttt{gym\_md} environment and moved rendering to pygame.
+	\item Create a deterministic agent based on MiniDungeon personas \cite{holmgard2014evolvingpersonas}.
 \end{itemize}
 
-\subsubsection{Evaluation}
+\subsection{Iteration 3: Dungeon Generator}
+Third iteration involved procedurally generating dungeon layouts.
 
-Describe how you evaluated this iteration, for example what kind of user testing or technical testing you conducted. This should include:
+% \subsection{Iteration X}
 
-\begin{itemize}
-	\item Test design: explain what is the objective of the study: what kind of information are you trying to obtain? What kind of study did you conduct? (Usability test, playtest, something more related to your RQs, etc.?) Did you use a specific established methodology? Usually this is not a very large part and serves as an introduction to your test.
-	\item Test methodology: this is usually a larger part where you need to provide all the details of how you conducted your test. 
-	\begin{itemize}
-		\item How did you structure the test? For example, “The participant played the game while doing think-aloud, then compiled a survey.”
-		\item Ethical reflections: is there some problematic aspect that you had to address? If so, how did you address it? How are you compliant with GDPR laws? 
-		\item Technical details: where did you conduct the study? What hardware was used? 
-		\item Detailed information about the test. For example, if you used a survey, what questions were included? If you conducted interviews, how did you structure them? How did you collect the data?
-	\end{itemize}
-	\item Results of the test
-	\begin{itemize}
-		\item How many participants did you have?
-		\item What are some basic demographics for the participants?
-		\item Present the data collected (use tables and graphs, rather than text). 
-		\item Make sure you mention what statistical methods you use (and why).
-	\end{itemize}
-\end{itemize}
+% You will often go through various iterations of product/game design, duplicate this subsection for each iteration before the final one. 
+
+% \begin{itemize}
+% 	\item Usually, iteration 1 would be a low fidelity prototype.
+% 	\item Iteration 2 could be a high-fidelity prototype (vertical slice or functional prototype).
+% 	\item Iteration 3 or later are refinements (extended functionality, improvements/polish, usability tweaks, bug-fixing) or the final product.
+% \end{itemize}
+
+% \subsubsection{About}
+
+% Describe what this iteration was all about.
+
+% \begin{itemize}
+% 	\item What is the purpose of this iteration?
+% 	\item What were the goals?
+% 	\item Describe and justify design decisions. For example, “we implemented feature X because it relates to gamification concept Y”, or “in the previous iteration we identified issues with the user interface, so we reworked by changing X, Y, and Z.”
+% 	\item Include images/sketches. 
+% \end{itemize}
+
+% \subsubsection{Evaluation}
+
+% Describe how you evaluated this iteration, for example what kind of user testing or technical testing you conducted. This should include:
+
+% \begin{itemize}
+% 	\item Test design: explain what is the objective of the study: what kind of information are you trying to obtain? What kind of study did you conduct? (Usability test, playtest, something more related to your RQs, etc.?) Did you use a specific established methodology? Usually this is not a very large part and serves as an introduction to your test.
+% 	\item Test methodology: this is usually a larger part where you need to provide all the details of how you conducted your test. 
+% 	\begin{itemize}
+% 		\item How did you structure the test? For example, “The participant played the game while doing think-aloud, then compiled a survey.”
+% 		\item Ethical reflections: is there some problematic aspect that you had to address? If so, how did you address it? How are you compliant with GDPR laws? 
+% 		\item Technical details: where did you conduct the study? What hardware was used? 
+% 		\item Detailed information about the test. For example, if you used a survey, what questions were included? If you conducted interviews, how did you structure them? How did you collect the data?
+% 	\end{itemize}
+% 	\item Results of the test
+% 	\begin{itemize}
+% 		\item How many participants did you have?
+% 		\item What are some basic demographics for the participants?
+% 		\item Present the data collected (use tables and graphs, rather than text). 
+% 		\item Make sure you mention what statistical methods you use (and why).
+% 	\end{itemize}
+% \end{itemize}
 
 
-\subsubsection{Reflections and decisions}
-In this section describe how are you using the results you described in the previous section to further your development, to answer your research questions, or in general to evaluate your project (this last part is mostly relevant for the final iteration)
+% \subsubsection{Reflections and decisions}
+% In this section describe how are you using the results you described in the previous section to further your development, to answer your research questions, or in general to evaluate your project (this last part is mostly relevant for the final iteration)
 
-\begin{itemize}
-	\item How do you interpret the results you just described? What do they mean?
-	\item How are you planning to use these in the following iteration?
-\end{itemize}
+% \begin{itemize}
+% 	\item How do you interpret the results you just described? What do they mean?
+% 	\item How are you planning to use these in the following iteration?
+% \end{itemize}
 
 
-\subsection{Final iteration}
+% \subsection{Final iteration}
 
-This section describes the final tweaks you applied from the previous iteration. Show the main differences and describe the features of the final product (just like the “About” section in the previous iterations)
+% This section describes the final tweaks you applied from the previous iteration. Show the main differences and describe the features of the final product (just like the “About” section in the previous iterations)

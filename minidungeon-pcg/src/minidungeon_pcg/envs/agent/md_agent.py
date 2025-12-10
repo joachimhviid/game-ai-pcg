@@ -156,7 +156,7 @@ class MdAgent:
                 reward += -0.1
         elif act_idx == 5:
             if 0 <= current_x < w and 0 <= current_y < h:
-                if grid[current_y][current_xcx] == "T":
+                if grid[current_y][current_x] == "T":
                     reward += 1.0
                     grid[current_y][current_x] = "."
                 elif grid[current_y][current_x] == "P":
