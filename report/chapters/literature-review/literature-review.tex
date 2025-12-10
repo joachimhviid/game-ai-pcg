@@ -1,13 +1,31 @@
 \section{Literature review}
 
-This study like so many others before it, focus on the usage of Procedural content generation in a game context. 
+To address the research questions regarding the optimization of dungeon layouts for "Flow," it is
+necessary to examine the three intersecting domains. First we review existing PCG techniques to 
+understand the limitations of current random generation. Secondly we explore Genetic algorithms
+with Fitness Functions in game design, specifically analyzing how evolutionary computations computations
+can be used to search for better content rather than simple construction of content. And finally
+we need to analyze and understand the psycological frameworks of Flow Theory and methods to measure
+player engagement, which provide the metrics requried to evaluate the success of the project.
 
 \subsection{Procedural Content generation (PCG)}
+Procedural Content Generation (PCG) refers to the algorithm in games in w hich creates game content with
+limited human input \cite{Book_PCG}.  In the context of a dungeon crawler game, PCG can be primarily used 
+to maximize replayability by giving the player a unique map layout and amount of enemies during 
+each play session. A common method relies on constructive generation methods, these algorithms assemble
+pre-authored "chunks" or rooms according to specific rules to create a coherent level structure 
+\cite{Book_PCG}\cite{Constructive_PCG}.
+
+Another unconventionel but maybe more practical solution to this could also be PCG through Machine learning on 
+already existing content like levels and amount of eneimes \cite{PCG_ML}. This project tries to 
+diverge from these already researched and maybe more traditional solutions by adopting 
+Genetic Algorithms and Fitness functions. Rather than generating a single layout and accepting it, our
+method treats level generation as an optimization problem \cite{Experience_Driven_PCG}. By generating
+a population of dungeons and selecting the "fittest" ones based on engagement metrics we aim to shift
+focus from simple randomness to a more Dynamic Difficult player centric design. 
 
 \subsection{Genetic Algorithm}
 
-\subsection{Flow Theory & Dynamic Difficulty Adjustment (DDA)}
 
-\subsection{Measuring player experience}
-
+\subsection{Flow Theory \& Dynamic Difficulty Adjustment (DDA) }
 
