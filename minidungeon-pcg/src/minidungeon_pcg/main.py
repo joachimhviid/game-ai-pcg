@@ -1,21 +1,19 @@
 import gymnasium as gym
-import gymnasium as gym
 import argparse
 import numpy as np
 from typing import List
 from minidungeon_pcg.pcg.generator import Generator
 
 # Default settings for the training loop
-DEFAULT_BATCH_SIZE: int = 5
+DEFAULT_BATCH_SIZE: int = 10
 DEFAULT_PLAYS_PER_LEVEL: int = 10
 DEFAULT_MAX_STEPS: int = 200
 DEFAULT_MODEL_PATH: str = "generator_model.json"
 
 def main():
-    parser = argparse.ArgumentParser(description="Run the Minidungeon PCG environment with a random agent and adaptive generator.")
+    parser = argparse.ArgumentParser(description="Run the Minidungeon PCG environment with an agent and adaptive generator.")
     
     # Configuration arguments
-    parser.add_argument("--env", type=str, default="md-pygame", choices=["md-pygame", "md-pcg"], help="The environment to run.")
     parser.add_argument("--render_mode", type=str, default="human", help="The rendering mode for the environment.")
     parser.add_argument("--batch_size", type=int, default=DEFAULT_BATCH_SIZE, help="Number of levels to generate and play in a batch.")
     parser.add_argument("--plays_per_level", type=int, default=DEFAULT_PLAYS_PER_LEVEL, help="Number of times the agent plays each level.")
@@ -49,7 +47,7 @@ def main():
         print(f"\n--- Playing Level {i+1}/{len(level_names)}: {level_name} ---")
         
         # Create a new environment for each level dynamically
-        env = gym.make(args.env, render_mode=args.render_mode, stage_name=level_name)
+        env = gym.make("md-pygame", render_mode=args.render_mode, stage_name=level_name)
 
         for episode in range(args.plays_per_level):
             observation, info = env.reset()
@@ -60,22 +58,22 @@ def main():
                 if args.render_mode == "human":
                     env.render()
 
-                action = env.action_space.sample()
+                action = np.zeros(env.action_space.shape, dtype=np.float32)
                 observation, reward, terminated, truncated, info = env.step(action)
                 reward_sum += float(reward)
                 done = terminated or truncated
 
                 if done:
                     # Win detection based on positive reward at termination
-                    is_win = terminated and reward > 0 
+                    is_win = terminated and reward > 0
                     batch_wins.append(1 if is_win else 0)
                     break
             
             batch_rewards.append(reward_sum)
-            if not done: # Episode was truncated (timed out)
+            if not done:  # Episode was truncated (timed out)
                 batch_wins.append(0)
 
-            print(f"   Episode {episode + 1}: Total Reward = {reward_sum:.2f}")
+            print(f"  Episode {episode + 1}/{args.plays_per_level}: Total Reward = {reward_sum:.2f}")
 
         env.close()
 

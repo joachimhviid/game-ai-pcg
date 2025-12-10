@@ -7,10 +7,13 @@ class MdTreasureAgent(MdAgent):
     def __init__(self, debug: bool = False) -> None:
         super().__init__(debug)
         self.standard_vector = np.array(
-            [0.0, 0.9, 1.0, 0.0, 0.7, 0.6, 0.8], dtype=np.float32
+            # Action 3 (Go to Potion) is given a slight edge over Action 0 (Go to Monster)
+            # to break ties logically instead of randomly.
+            [0.0, 0.9, 1.0, 0.1, 0.7, 0.6, 0.8], dtype=np.float32
         )
         self.survival_vector = np.array(
-            [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0], dtype=np.float32
+            # In survival mode, the preference for a potion should be even clearer.
+            [0.0, 0.8, 0.9, 0.2, 1.0, 0.5, 0.7], dtype=np.float32
         )
         self.is_survival_mode = False
 

@@ -1,7 +1,0 @@
-{
-    "min_path_length": 10,
-    "target_monster_count": 4,
-    "target_potion_count": 0,
-    "target_treasure_count": 3,
-    "difficulty_level": 2
-}
