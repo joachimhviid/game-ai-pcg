@@ -1,8 +1,9 @@
 import gymnasium as gym
+import gymnasium as gym
 import argparse
-from minidungeon_pcg.pcg.generator import Generator
-from typing import List
 import numpy as np
+from typing import List
+from minidungeon_pcg.pcg.generator import Generator
 
 # Default settings for the training loop
 DEFAULT_BATCH_SIZE: int = 5
@@ -10,14 +11,12 @@ DEFAULT_PLAYS_PER_LEVEL: int = 10
 DEFAULT_MAX_STEPS: int = 200
 DEFAULT_MODEL_PATH: str = "generator_model.json"
 
-
 def main():
     parser = argparse.ArgumentParser(description="Run the Minidungeon PCG environment with a random agent and adaptive generator.")
-    # Existing args
+    
+    # Configuration arguments
     parser.add_argument("--env", type=str, default="md-pygame", choices=["md-pygame", "md-pcg"], help="The environment to run.")
     parser.add_argument("--render_mode", type=str, default="human", help="The rendering mode for the environment.")
-    
-    # New args for batch running and adaptation
     parser.add_argument("--batch_size", type=int, default=DEFAULT_BATCH_SIZE, help="Number of levels to generate and play in a batch.")
     parser.add_argument("--plays_per_level", type=int, default=DEFAULT_PLAYS_PER_LEVEL, help="Number of times the agent plays each level.")
     parser.add_argument("--max_steps", type=int, default=DEFAULT_MAX_STEPS, help="Max steps per episode.")
@@ -49,8 +48,7 @@ def main():
     for i, level_name in enumerate(level_names):
         print(f"\n--- Playing Level {i+1}/{len(level_names)}: {level_name} ---")
         
-        # Create a new environment for each level.
-        # This dynamically loads the correct stage file, bypassing the static registration.
+        # Create a new environment for each level dynamically
         env = gym.make(args.env, render_mode=args.render_mode, stage_name=level_name)
 
         for episode in range(args.plays_per_level):
@@ -68,16 +66,16 @@ def main():
                 done = terminated or truncated
 
                 if done:
-                    # A "win" is when the episode terminates with a positive reward (reaching the Exit)
+                    # Win detection based on positive reward at termination
                     is_win = terminated and reward > 0 
                     batch_wins.append(1 if is_win else 0)
                     break
             
             batch_rewards.append(reward_sum)
-            if not done: # Episode was truncated
+            if not done: # Episode was truncated (timed out)
                 batch_wins.append(0)
 
-            print(f"  Episode {episode + 1}: Total Reward = {reward_sum:.2f}")
+            print(f"   Episode {episode + 1}: Total Reward = {reward_sum:.2f}")
 
         env.close()
 
@@ -92,16 +90,13 @@ def main():
         print(f"Overall Avg Reward: {avg_reward:.2f}")
         print(f"Overall Win Rate:   {win_rate:.2%}")
 
-        # Update generator based on performance
+        # Adapt difficulty based on agent results
         generator.update_difficulty(avg_reward=avg_reward, win_rate=win_rate)
-        
-        # Save the updated model for the next run
         generator.save_model(args.model_file)
     else:
         print("No episodes were run. Generator not updated.")
     
     print("="*60)
-
 
 if __name__ == "__main__":
     main()
