@@ -25,7 +25,48 @@ a population of dungeons and selecting the "fittest" ones based on engagement me
 focus from simple randomness to a more Dynamic Difficult player centric design. 
 
 \subsection{Genetic Algorithm}
+As outlined in the introduction, this project diverges from traditional constructive generation by treating 
+level design as an optimization problem. Genetic Algorithms (GA) are a subclass of evolutionary computation 
+inspired by biological evolution, utilizing mechanisms such as selection, crossover, and mutation to evolve 
+solutions to complex problems. In the context of games, Search-based Procedural Content Generation (SBPCG) 
+employs these algorithms to search through the space of possible content to find instances that maximize 
+a specific utility function.
 
+Unlike constructive methods that assemble pre-authored chunks based on rigid rules, a GA operates by 
+maintaining a population of candidate dungeon layouts. In each generation, the algorithm evaluates these 
+candidates using a fitness function—a metric designed to quantify the quality of the content. "Fittest" 
+candidates are selected to breed the next generation, theoretically converging on an optimal layout that 
+balances specific design criteria.
+
+While this project specifically applies GAs to dungeon crawlers, the methodology is not unique 
+to this genre. Significant research has demonstrated the efficacy of genetic algorithms in other 
+game types, such as platformers. In those contexts, GAs have been used to evolve level segments that 
+ensure playability and adherence to specific rhythm or difficulty curves. This cross-genre 
+application highlights the versatility of evolutionary computation; whether ensuring jump distances 
+in a platformer or room connectivity in a dungeon crawler, the core principle remains the iterative 
+evolution of content to satisfy a fitness function derived from design constraints. 
+\cite{Automatic_Game_world_with_GA} \cite{GA_in_games}
 
 \subsection{Flow Theory \& Dynamic Difficulty Adjustment (DDA) }
+
+To effectively utilize a Genetic Algorithm for improving player experience, it is crucial to define 
+the target metrics for the fitness function. This project relies on the psychological framework of Flow 
+Theory to guide the generation process. Flow is described as a state of optimal experience where a 
+player is fully immersed, occurring when there is a balance between the challenge presented by the 
+game and the player's skill level.
+
+When content is generated randomly, it risks breaking this balance, resulting in layouts that are 
+either trivially easy or unfairly difficult. This inconsistency can lead to frustration and 
+disengagement. To mitigate this, this project integrates principles of Dynamic Difficulty 
+Adjustment (DDA). DDA systems traditionally adjust game parameters in real-time based on '
+player performance; however, in this implementation, the adjustment occurs during the generation phase.
+\cite{Case_for_DDA} \cite{GA_for_Real-Time_DDA} \cite{DDA_Book}
+
+By incorporating "Experience-driven Procedural Content Generation" (EDPCG), the system attempts 
+to model player experience and use it as a driver for the content generation. The fitness function '
+serves as the bridge between Flow Theory and the Genetic Algorithm: it evaluates dungeon layouts 
+not just on structural validity, but on their potential to maintain the delicate balance between 
+challenge and skill. This approach aims to minimize the risk of repetitive or frustrating layouts 
+often observed in static or purely random generation methods.
+\cite{Experience_Driven_PCG}
 
