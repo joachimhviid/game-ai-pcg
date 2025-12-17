@@ -6,6 +6,7 @@ from typing import List, Tuple, Dict
 from collections import deque
 from os import path
 
+
 class Generator:
     """
     Creates stage using Genetic Algorithm and saves to /pcg/stages
@@ -43,9 +44,9 @@ class Generator:
             "target_monster_count": 3,
             "target_potion_count": 1,
             "target_treasure_count": 3,
-            "difficulty_level": 1
+            "difficulty_level": 1,
         }
-        
+
         self.update_internal_params()
 
     def update_internal_params(self):
@@ -55,16 +56,18 @@ class Generator:
         self.target_potion_count = self.config["target_potion_count"]
         self.target_treasure_count = self.config["target_treasure_count"]
 
-    def generate_batch(self, batch_size: int = 10, stage_name_prefix: str = "generated") -> List[str]:
+    def generate_batch(
+        self, batch_size: int = 10, stage_name_prefix: str = "generated"
+    ) -> List[str]:
         """
         Generates a batch of levels and returns their names.
         """
         generated_files = []
         print(f"--- Starting Batch Generation (Size: {batch_size}) ---")
-        
+
         # We can optionally keep the population between generations to "evolve" the batch
         # For now, we initialize fresh for diversity, but you could persist self.population
-        
+
         for i in range(batch_size):
             name = f"{stage_name_prefix}_{i}"
             print(f"Generating level {i+1}/{batch_size}: {name}")
@@ -73,7 +76,7 @@ class Generator:
                 generated_files.append(name)
             except Exception as e:
                 print(f"Failed to generate level {i}: {e}")
-                
+
         return generated_files
 
     def update_difficulty(self, avg_reward: float, win_rate: float):
@@ -82,39 +85,49 @@ class Generator:
         - If agent is winning easily (High Reward/Win Rate) -> Increase Difficulty
         - If agent is struggling (Low Reward/Win Rate) -> Decrease Difficulty
         """
-        print(f"Updating Generator based on: Avg Reward={avg_reward:.2f}, Win Rate={win_rate:.2f}")
-        
+        print(
+            f"Updating Generator based on: Avg Reward={avg_reward:.2f}, Win Rate={win_rate:.2f}"
+        )
+
         # Simple heuristic thresholds (Adjust these based on your reward scale)
         # Assuming Max Reward ~20-30 per level
-        
-        if win_rate > 0.8: # Too Easy
+
+        if win_rate > 0.8:  # Too Easy
             print(">> Increasing Difficulty")
             self.config["difficulty_level"] += 1
             self.config["target_monster_count"] += 1
-            self.config["target_potion_count"] = max(0, self.config["target_potion_count"] - 1)
+            self.config["target_potion_count"] = max(
+                0, self.config["target_potion_count"] - 1
+            )
             self.config["min_path_length"] += 2
-            
-        elif win_rate < 0.2: # Too Hard
+
+        elif win_rate < 0.2:  # Too Hard
             print(">> Decreasing Difficulty")
-            self.config["difficulty_level"] = max(1, self.config["difficulty_level"] - 1)
-            self.config["target_monster_count"] = max(1, self.config["target_monster_count"] - 1)
+            self.config["difficulty_level"] = max(
+                1, self.config["difficulty_level"] - 1
+            )
+            self.config["target_monster_count"] = max(
+                1, self.config["target_monster_count"] - 1
+            )
             self.config["target_potion_count"] += 1
             self.config["min_path_length"] = max(5, self.config["min_path_length"] - 2)
-            
+
         else:
             print(">> Difficulty maintained")
 
         # Cap values to prevent breaking the generator
-        self.config["target_monster_count"] = min(10, self.config["target_monster_count"])
+        self.config["target_monster_count"] = min(
+            10, self.config["target_monster_count"]
+        )
         self.config["target_potion_count"] = min(5, self.config["target_potion_count"])
-        
+
         self.update_internal_params()
 
     def save_model(self, filename: str = "generator_model.json"):
         """Save the current generator configuration"""
         file_dir = path.dirname(__file__)
         filepath = path.join(file_dir, filename)
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             json.dump(self.config, f, indent=4)
         print(f"Generator model saved to {filepath}")
 
@@ -123,7 +136,7 @@ class Generator:
         file_dir = path.dirname(__file__)
         filepath = path.join(file_dir, filename)
         if path.exists(filepath):
-            with open(filepath, 'r') as f:
+            with open(filepath, "r") as f:
                 self.config = json.load(f)
             self.update_internal_params()
             print(f"Generator model loaded from {filepath}")
@@ -132,15 +145,15 @@ class Generator:
 
     # ... [Keep your existing generate_dungeon, initialize_population, etc. methods here] ...
     # Ensure generate_dungeon uses self.target_monster_count etc. (which it already does)
-    
+
     # Below is the rest of your original code (abbreviated for the response)
     # Be sure to include the full original class implementation here.
-    
+
     def generate_dungeon(self, stage_name: str = "generated") -> List[List[str]]:
         # ... (Your original implementation) ...
         # Make sure to remove the hardcoded print at the end or change it to debug
         # COPY PASTE YOUR ORIGINAL generate_dungeon METHOD AND HELPERS HERE
-        
+
         # [Use the exact code you provided in the upload for the rest of the class]
         print(f"Initializing GA with population size {self.population_size}...")
         population = self.initialize_population()
@@ -152,7 +165,7 @@ class Generator:
         for generation in range(self.generations):
             fitnesses = [self.calculate_fitness(dungeon) for dungeon in population]
             max_fitness_idx = fitnesses.index(max(fitnesses))
-            
+
             if fitnesses[max_fitness_idx] > best_fitness:
                 best_fitness = fitnesses[max_fitness_idx]
                 best_dungeon = copy.deepcopy(population[max_fitness_idx])
@@ -184,7 +197,7 @@ class Generator:
 
     # ... Include all other helper methods (initialize_population, etc.) from your upload ...
     # ... I am omitting them here for brevity, but they are required ...
-    
+
     def initialize_population(self) -> List[List[List[str]]]:
         """Create initial random population of dungeons"""
         population = []
@@ -350,9 +363,7 @@ class Generator:
         monster_count = len(self.find_all_tiles(dungeon, self.MONSTER))
 
         if monster_count > self.target_monster_count + 2:
-            fitness -= (
-                monster_count - self.target_monster_count - 2
-            ) * 50
+            fitness -= (monster_count - self.target_monster_count - 2) * 50
 
         fitness += max(0, 10 - abs(potion_count - self.target_potion_count) * 3)
         fitness += max(0, 5 - abs(treasure_count - self.target_treasure_count) * 2)
@@ -622,7 +633,7 @@ class Generator:
             while dungeon[x][y] == self.WALL and x > 0:
                 x -= 1
             dungeon[x][y] = self.EXIT
-        
+
         # Uses config vars here
         monsters = self.find_all_tiles(dungeon, self.MONSTER)
         if len(monsters) > self.target_monster_count + 2:
@@ -656,6 +667,7 @@ class Generator:
 
     def save_config(self, stage_name: str) -> None:
         import json
+
         file_dir = path.dirname(__file__)
         config_file = path.join(file_dir, "props", f"{stage_name}.json")
         with open(config_file, "w") as f:
