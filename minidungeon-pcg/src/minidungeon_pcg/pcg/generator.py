@@ -318,7 +318,7 @@ class Generator:
             if dungeon[x][y] == self.FLOOR:
                 return x, y
             attempts += 1
-        return None, None
+        return None, None # type: ignore
 
     def calculate_fitness(self, dungeon: List[List[str]]) -> float:
         fitness = 0.0
@@ -481,7 +481,7 @@ class Generator:
             for j in range(self.width):
                 if dungeon[i][j] == tile_type:
                     return (i, j)
-        return None
+        return None, None # type: ignore
 
     def find_all_tiles(
         self, dungeon: List[List[str]], tile_type: str

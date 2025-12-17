@@ -89,15 +89,14 @@ def main():
             for step in range(args.max_steps):
                 if args.render_mode == "human":
                     env.render()
-
-                action = np.zeros(env.action_space.shape, dtype=np.float32)
+                action = np.zeros(env.action_space.shape, dtype=float) # type: ignore
                 observation, reward, terminated, truncated, info = env.step(action)
                 reward_sum += float(reward)
                 done = terminated or truncated
 
                 if done:
                     # Win detection based on positive reward at termination
-                    is_win = terminated and reward > 0
+                    is_win = terminated and float(reward) > 0
                     batch_wins.append(1 if is_win else 0)
                     break
 
@@ -116,8 +115,8 @@ def main():
     print("Batch finished. Analyzing performance...")
 
     if batch_rewards:
-        avg_reward = np.mean(batch_rewards)
-        win_rate = np.mean(batch_wins)
+        avg_reward = np.mean(batch_rewards, dtype=float)
+        win_rate = np.mean(batch_wins, dtype=float)
 
         print(f"Overall Avg Reward: {avg_reward:.2f}")
         print(f"Overall Win Rate:   {win_rate:.2%}")
