@@ -14,6 +14,7 @@ packages = [{include = "minidungeon_pcg", from = "src"}]
 
 [tool.poetry.scripts]
 start = "minidungeon_pcg.main:main"
+play = "minidungeon_pcg.play_level:main"
 generate-stage = "minidungeon_pcg.test_generator:main"
 format = "tools.run_black:run"
 
@@ -27,6 +28,7 @@ stable-baselines3 = "^2.7.1"
 rich = "^14.2.0"
 torchvision = {version = "^0.24.1", source = "pytorch_cuda_130"}
 torch = {version = "^2.9.1", source = "pytorch_cuda_130"}
+tensorboard = "^2.20.0"
 
 [[tool.poetry.source]]
 name = "pytorch_cuda_130"

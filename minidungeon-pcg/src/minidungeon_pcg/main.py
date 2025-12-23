@@ -1,8 +1,11 @@
 import argparse
 import os
+from minidungeon_pcg.pcg.dungeon_generator import DungeonGenerator
+from minidungeon_pcg.pcg.dungeon_generator_env import DungeonGeneratorEnv
 import numpy as np
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
+from stable_baselines3.common.vec_env import SubprocVecEnv
 from minidungeon_pcg.envs.generator_env import GeneratorEnv
 
 
@@ -53,6 +56,40 @@ def generate(args):
     env.close()
 
 
+def train_ga(args):
+    print("--- GA Mode ---")
+    vec_env = make_vec_env(lambda: DungeonGeneratorEnv(), n_envs=4, vec_env_cls=SubprocVecEnv)
+    # env = DungeonGeneratorEnv()
+    model = PPO(
+        "MultiInputPolicy", vec_env, verbose=1, tensorboard_log="./tensorboard/"
+    )
+    model.learn(total_timesteps=1_000_000)
+    model.save("dungeon_gen_v1")
+    print("Training complete")
+
+def generate_ga(args):
+    difficulty_target = args.n_levels if args.n_levels else 30.0
+    env = DungeonGeneratorEnv()
+    obs, _ = env.reset()
+    env.current_target = difficulty_target
+    obs["target_reward"] = np.array([difficulty_target], dtype=np.float32)
+
+    model = PPO.load("dungeon_gen_v1")
+    
+    done = False
+    
+    # The agent fills the board tile by tile
+    while not done:
+        # Agent looks at the empty map + target and decides the next tile
+        action, _ = model.predict(obs, deterministic=True)
+        
+        # Apply action
+        obs, reward, done, _, _ = env.step(action)
+        
+    print(DungeonGeneratorEnv.dungeon_to_str(obs["dungeon"]))
+    return obs["dungeon"]
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Train or use a PPO model to generate Minidungeon levels."
@@ -61,7 +98,7 @@ def main():
         "--mode",
         type=str,
         default="train",
-        choices=["train", "generate"],
+        choices=["train", "generate", "ga", "ga-gen"],
         help="Run in 'train' or 'generate' mode.",
     )
     parser.add_argument(
@@ -104,6 +141,10 @@ def main():
         train(args)
     elif args.mode == "generate":
         generate(args)
+    elif args.mode == "ga":
+        train_ga(args)
+    elif args.mode == "ga-gen":
+        generate_ga(args)
     else:
         parser.print_help()
 

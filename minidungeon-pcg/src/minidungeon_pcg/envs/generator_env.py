@@ -2,7 +2,6 @@ import gymnasium as gym
 import numpy as np
 from minidungeon_pcg.pcg.generator import Generator
 from minidungeon_pcg.envs.md_env import MdEnv
-import os
 
 
 class GeneratorEnv(gym.Env):

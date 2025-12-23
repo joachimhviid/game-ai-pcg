@@ -1,37 +1,38 @@
+# MiniDungeons PCG
+
 ## Prerequisites
-1. Install poetry
+
+1. Python 3.13 installed
+2. Poetry installed (e.g. `pipx install poetry`)
 
 ## Run Project
-1. cd /game-ai-pcg/minidungeon-pcg
-2. install poetry
-3. poetry run start
 
-## Run game
-poetry run start ga_generated --env md-pygame --batch_size 10 --plays_per_level 10
-
+1. Activate the virtual environment
+    - Bash/Zsh/Csh: `eval $(poetry env activate)`
+    - Powershell: `Invoke-Expression (poetry env activate)`
+2. `poetry install`
+3. `poetry run play <name-of-stage>` (Included stage is "pcg")
 
 ## Information
-T = CHEST
-. = WALKING TILE
-"#" = NON-WALKING TILE
-M = MONSTER
-S = SPAWN
-P = POTION
-E = EXIT/STAIRS
 
-## Setup
-poetry install
+T = CHEST  
+. = WALKING TILE  
+\# = NON-WALKING TILE  
+M = MONSTER  
+S = SPAWN  
+P = POTION  
+E = EXIT/STAIRS
 
 ## Running PPO
 # Train new generator model
-poetry run python -m minidungeon_pcg.main --mode train --train_timesteps 10000
+poetry run start --mode train --train_timesteps 10000
 
 # Continue training existing model
-poetry run python -m minidungeon_pcg.main --mode train --continue_training
+poetry run start --mode train --continue_training
 
 # Generate n levels using trained model
-poetry run python -m minidungeon_pcg.main --mode generate --n_levels 15
+poetry run start --mode generate --n_levels 15
 
-## Running PPO levels with agent visualized
-poetry run python play_level.py --all
-poetry run python play_level.py ppo_generated_n 
+## Running levels with agent visualized
+poetry run play --all
+poetry run play ppo_generated_n 

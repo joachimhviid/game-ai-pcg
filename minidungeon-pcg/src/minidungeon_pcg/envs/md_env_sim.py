@@ -1,34 +1,24 @@
 from typing import Any
-from pathlib import Path
 import gymnasium as gym
 from minidungeon_pcg.envs.agent.md_treasure_agent import MdTreasureAgent
-from minidungeon_pcg.pcg.stage_renderer import StageRenderer
 import numpy as np
-import pygame
-import random
 
 
-class MdEnv(gym.Env[np.ndarray, np.ndarray]):
-    metadata = {"render_modes": ["human"], "render_fps": 10}
-
-    def __init__(self, stage_name: str, render_mode=None, debug: bool = False):
-        self.render_mode = render_mode
+class MdEnvSim(gym.Env[np.ndarray, np.ndarray]):
+    def __init__(self, level: np.ndarray, debug: bool = False):
         self.debug = debug
-
-        self.window_size = 512
-        self.window = None
-        self.clock = None
+        self.level = level
+        self.level_width, self.level_height = level.shape
 
         self.agent = MdTreasureAgent(debug=self.debug)
         self._closed = False
-
-        self.stage_renderer = StageRenderer(stage_name, window_size=self.window_size)
 
         # keep an editable copy of the map so env dynamics (treasure pickup etc.)
         # can modify it independent of the original stage file. StageRenderer
         # will render whatever is in `self.stage_renderer.grid`, so we keep
         # a deep copy to restore on reset.
-        self._initial_grid = [list(r) for r in self.stage_renderer.grid]
+        self._initial_grid = self.level.copy()
+        # self._initial_grid = [list(r) for r in self.level]
 
         # actions: gym-md style - a length-7 float vector where the env picks
         # the highest-scoring high-level action (head-to-monster, head-to-treasure, ...)
@@ -43,9 +33,9 @@ class MdEnv(gym.Env[np.ndarray, np.ndarray]):
             raise RuntimeError("Environment is closed")
 
         # delegate action handling to the agent
-        grid = self.stage_renderer.grid
-        w = self.stage_renderer.width
-        h = self.stage_renderer.height
+        grid = self.level
+        w = self.level_width
+        h = self.level_height
 
         selected = self.agent.select_action(action, grid)
         new_pos, reward, terminated, truncated, info, new_grid, new_hp = (
@@ -53,7 +43,7 @@ class MdEnv(gym.Env[np.ndarray, np.ndarray]):
         )
 
         # adopt agent results
-        self.stage_renderer.grid = new_grid
+        self.level = new_grid
 
         obs = self._get_observation()
         info = {"agent_pos": new_pos, "agent_hp": new_hp, **info}
@@ -61,12 +51,14 @@ class MdEnv(gym.Env[np.ndarray, np.ndarray]):
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None):
         # restore a fresh copy of the initial grid
-        self.stage_renderer.grid = [list(r) for r in self._initial_grid]
+        self.level = self._initial_grid.copy()
+        rows, cols = np.where(self.level == "S")
 
-        if self.stage_renderer.start_pos is not None:
-            self.agent.position = self.stage_renderer.start_pos
-        else:
+        # No starting location found
+        if len(rows) == 0:
             self.agent.position = (0, 0)
+        else:
+            self.agent.position = (rows[0], cols[0])
 
         # reset HP
         self.agent.hp = self.agent.max_hp
@@ -86,7 +78,7 @@ class MdEnv(gym.Env[np.ndarray, np.ndarray]):
         # 6: distance to exit (avoid monsters)
         # 7: agent HP
 
-        grid = self.stage_renderer.grid
+        grid = list(self.level)
 
         # use the agent-attached Pather helper for distance queries
         pather = self.agent.pather
@@ -135,77 +127,7 @@ class MdEnv(gym.Env[np.ndarray, np.ndarray]):
     def _get_info(self):
         return {}
 
-    def render(self):
-        if self.render_mode == "human":
-            return self._render_frame()
-
-    def _render_frame(self):
-        if self._closed:
-            return None
-
-        if self.window is None and self.render_mode == "human":
-            pygame.init()
-            pygame.display.init()
-            self.window = pygame.display.set_mode((self.window_size, self.window_size))
-        if self.clock is None and self.render_mode == "human":
-            self.clock = pygame.time.Clock()
-
-        canvas = pygame.Surface((self.window_size, self.window_size))
-        canvas.fill((255, 255, 255))
-
-        # let the stage renderer draw the map and agent
-        try:
-            self.stage_renderer.render(
-                canvas,
-                agent_pos=self.agent.position,
-                agent_hp=getattr(self.agent, "hp", None),
-                agent_max_hp=getattr(self.agent, "max_hp", None),
-                agent_mode=getattr(self.agent, "is_survival_mode", False),
-            )
-        except Exception:
-            # fail silently for rendering so render() doesn't crash the caller
-            pass
-
-        # blit to window and update display
-        if self.window is not None:
-            self.window.blit(canvas, canvas.get_rect())
-
-            # handle events so window remains responsive
-            for event in pygame.event.get():
-                try:
-                    if event.type == pygame.QUIT:
-                        # close the env and stop rendering
-                        self.close()
-                        return None
-                    # allow Escape to close window too
-                    if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                        self.close()
-                        return None
-                except Exception:
-                    # be resilient to unexpected event attributes
-                    continue
-
-            pygame.display.update()
-        if self.clock is not None:
-            self.clock.tick(self.metadata["render_fps"])
-
     def close(self):
-        # tear down pygame window and subsystems safely
-        try:
-            if self.window is not None:
-                try:
-                    pygame.display.quit()
-                except Exception:
-                    pass
-            try:
-                pygame.quit()
-            except Exception:
-                pass
-        finally:
-            self.window = None
-            self.clock = None
-            self._closed = True
-
         try:
             return super().close()
         except Exception:

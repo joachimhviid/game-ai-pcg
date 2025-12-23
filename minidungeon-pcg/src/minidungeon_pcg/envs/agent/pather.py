@@ -1,5 +1,6 @@
 from collections import deque
 from typing import List, Optional, Sequence, Set, Tuple
+import numpy as np
 
 
 Position = Tuple[int, int]
@@ -24,14 +25,14 @@ class Pather:
     def __init__(self) -> None:
         pass
 
-    def _grid_size(self, grid: Sequence[Sequence[str]]) -> Tuple[int, int]:
+    def _grid_size(self, grid: Sequence[list[str]]) -> Tuple[int, int]:
         height = len(grid)
         width = 0 if height == 0 else max(len(row) for row in grid)
         return width, height
 
     def bfs(
         self,
-        grid: Sequence[Sequence[str]],
+        grid: Sequence[list[str]],
         start: Position,
         avoid_monsters: bool = False,
     ):
@@ -73,7 +74,7 @@ class Pather:
 
     def shortest_path(
         self,
-        grid: Sequence[Sequence[str]],
+        grid: Sequence[list[str]],
         start: Position,
         target_chars: Set[str],
         avoid_monsters: bool = False,
@@ -120,7 +121,7 @@ class Pather:
 
     def next_step(
         self,
-        grid: Sequence[Sequence[str]],
+        grid: Sequence[list[str]],
         start: Position,
         target_chars: Set[str],
         avoid_monsters: bool = False,
@@ -137,7 +138,7 @@ class Pather:
 
     def next_action(
         self,
-        grid: Sequence[Sequence[str]],
+        grid: Sequence[list[str]],
         start: Position,
         target_chars: Set[str],
         avoid_monsters: bool = False,
@@ -164,7 +165,7 @@ class Pather:
 
     def distance_to_nearest(
         self,
-        grid: Sequence[Sequence[str]],
+        grid: Sequence[list[str]],
         start: Position,
         target_chars: Set[str],
         avoid_monsters: bool = False,

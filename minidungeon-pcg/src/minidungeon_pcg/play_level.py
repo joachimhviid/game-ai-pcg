@@ -9,12 +9,10 @@ def play(stage_name: str):
     Plays a level with rendering enabled.
     """
     print(f"--- Playing Level: {stage_name} ---")
-
+    env = None
     try:
-        # 1. Create the environment with human rendering
         env = MdEnv(stage_name=stage_name, render_mode="human")
 
-        # 2. Reset the environment
         obs, info = env.reset()
         env.render()
         time.sleep(1)  # Pause to see initial state
@@ -24,15 +22,12 @@ def play(stage_name: str):
         step_count = 0
         max_steps = 100  # Safety break
 
-        # 3. Run the simulation loop
         while not done and step_count < max_steps:
-            # The agent logic is inside MdEnv, so we can pass a dummy action
-            action = np.zeros(env.action_space.shape)
+            action = np.zeros(env.action_space.shape)  # type: ignore
             obs, reward, terminated, truncated, info = env.step(action)
             total_reward += reward
             done = terminated or truncated
 
-            # Render the frame
             env.render()
 
             step_count += 1
@@ -47,9 +42,9 @@ def play(stage_name: str):
         print(
             "Please make sure the stage name is correct and the file exists in 'minidungeon-pcg/src/minidungeon_pcg/pcg/stages/'."
         )
-        print("Example: 'ppo_generated_0' (without the .json extension)")
+        print("Example: 'ppo_generated_0' (without the .txt extension)")
     finally:
-        if "env" in locals() and env:
+        if env is not None:
             env.close()
 
 

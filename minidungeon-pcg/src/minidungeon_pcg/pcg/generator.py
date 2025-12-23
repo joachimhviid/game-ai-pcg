@@ -318,7 +318,7 @@ class Generator:
             if dungeon[x][y] == self.FLOOR:
                 return x, y
             attempts += 1
-        return None, None
+        return (0, 0)
 
     def calculate_fitness(self, dungeon: List[List[str]]) -> float:
         fitness = 0.0
@@ -481,7 +481,7 @@ class Generator:
             for j in range(self.width):
                 if dungeon[i][j] == tile_type:
                     return (i, j)
-        return None
+        return (0, 0)
 
     def find_all_tiles(
         self, dungeon: List[List[str]], tile_type: str
@@ -658,39 +658,8 @@ class Generator:
             for row in dungeon:
                 f.write("".join(row) + "\n")
         print(f"Dungeon saved to {stage_file}")
-        self.save_config(stage_name)
 
     def print_dungeon(self, dungeon: List[List[str]]) -> None:
         for row in dungeon:
             print("".join(row))
         print()
-
-    def save_config(self, stage_name: str) -> None:
-        import json
-
-        file_dir = path.dirname(__file__)
-        config_file = path.join(file_dir, "props", f"{stage_name}.json")
-        with open(config_file, "w") as f:
-            json.dump(self.game_config, f, indent=2)
-        print(f"Config saved to {config_file}")
-
-    # Configuration for the GAME (stats, points), separate from generator config
-    game_config = {
-        "PLAYER_MAX_HP": 30,
-        "IS_PLAYER_HP_LIMIT": True,
-        "ENEMY_POWER": 10,
-        "ENEMY_POWER_MIN": 5,
-        "ENEMY_POWER_MAX": 15,
-        "IS_ENEMY_POWER_RANDOM": True,
-        "POTION_POWER": 10,
-        "DISTANCE_INF": 1000,
-        "RENDER_WAIT_TIME": 0.05,
-        "REWARDS": {
-            "TURN": 1,
-            "EXIT": 20,
-            "KILL": 4,
-            "TREASURE": 3,
-            "POTION": 1,
-            "DEAD": -20,
-        },
-    }
