@@ -18,3 +18,18 @@ M = MONSTER
 S = SPAWN
 P = POTION
 E = EXIT/STAIRS
+
+## PPO setup
+poetry install
+poetry add stable-baselines3 torch
+poetry add rich
+
+## Running PPO
+# Train new generator model
+poetry run python -m minidungeon_pcg.main --mode train --train_timesteps 10000
+
+# Continue training existing model
+poetry run python -m minidungeon_pcg.main --mode train --continue_training
+
+# Generate n levels using trained model
+poetry run python -m minidungeon_pcg.main --mode generate --n_levels 15

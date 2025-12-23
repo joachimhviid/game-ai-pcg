@@ -16,8 +16,8 @@ class Generator:
         self,
         width: int = 9,
         height: int = 9,
-        population_size: int = 150,
-        generations: int = 300,
+        population_size: int = 20,
+        generations: int = 10,
         mutation_rate: float = 0.15,
         elite_size: int = 10,
     ) -> None:

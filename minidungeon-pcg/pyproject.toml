@@ -6,7 +6,7 @@ authors = [
     {name = "Joachim Hviid",email = "johvi22@student.sdu.dk"}
 ]
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.13, <3.15"
 license = "MIT"
 
 [tool.poetry]
@@ -23,6 +23,9 @@ gymnasium = "^1.2.2"
 matplotlib = "^3.10.7"
 gym-md = {path = "patches/gym_md-0.5.2-py3-none-any.whl"}
 pygame = "^2.6.1"
+stable-baselines3 = "^2.7.1"
+torch = "^2.9.1"
+rich = "^14.2.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
