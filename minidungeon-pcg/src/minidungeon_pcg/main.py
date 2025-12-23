@@ -5,6 +5,7 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
 from minidungeon_pcg.envs.generator_env import GeneratorEnv
 
+
 def train(args):
     """Train a PPO model to control the generator."""
     print("--- Training Mode ---")
@@ -24,6 +25,7 @@ def train(args):
     model.save(args.model_file)
     print("Training complete.")
 
+
 def generate(args):
     """Generate levels using a trained PPO model."""
     print("--- Generation Mode ---")
@@ -36,34 +38,66 @@ def generate(args):
     model = PPO.load(args.model_file)
     env = GeneratorEnv(debug=args.debug)
     env.stage_name_prefix = args.stage_prefix
-    
+
     obs, _ = env.reset()
 
     print(f"Generating {args.n_levels} levels with prefix '{args.stage_prefix}'...")
     for i in range(args.n_levels):
         action, _states = model.predict(obs, deterministic=False)
         obs, reward, done, truncated, info = env.step(action)
-        print(f"  Generated level {i+1}/{args.n_levels} -> Agent Reward: {reward:.2f}, Params: {env.generator.config}")
-    
+        print(
+            f"  Generated level {i+1}/{args.n_levels} -> Agent Reward: {reward:.2f}, Params: {env.generator.config}"
+        )
+
     print("Generation complete.")
     env.close()
 
+
 def main():
-    parser = argparse.ArgumentParser(description="Train or use a PPO model to generate Minidungeon levels.")
-    parser.add_argument("--mode", type=str, default="train", choices=["train", "generate"], help="Run in 'train' or 'generate' mode.")
-    parser.add_argument("--model_file", type=str, default="generator_ppo_model.zip", help="Path to save/load the PPO model.")
+    parser = argparse.ArgumentParser(
+        description="Train or use a PPO model to generate Minidungeon levels."
+    )
+    parser.add_argument(
+        "--mode",
+        type=str,
+        default="train",
+        choices=["train", "generate"],
+        help="Run in 'train' or 'generate' mode.",
+    )
+    parser.add_argument(
+        "--model_file",
+        type=str,
+        default="generator_ppo_model.zip",
+        help="Path to save/load the PPO model.",
+    )
     parser.add_argument("--debug", action="store_true", help="Enable debug printing.")
 
     # Training-specific arguments
-    train_group = parser.add_argument_group('Training Arguments')
-    train_group.add_argument("--train_timesteps", type=int, default=1000, help="Number of timesteps to train the model.")
-    train_group.add_argument("--continue_training", action="store_true", help="Continue training from an existing model file.")
+    train_group = parser.add_argument_group("Training Arguments")
+    train_group.add_argument(
+        "--train_timesteps",
+        type=int,
+        default=1000,
+        help="Number of timesteps to train the model.",
+    )
+    train_group.add_argument(
+        "--continue_training",
+        action="store_true",
+        help="Continue training from an existing model file.",
+    )
 
     # Generation-specific arguments
-    gen_group = parser.add_argument_group('Generation Arguments')
-    gen_group.add_argument("--n_levels", type=int, default=10, help="Number of levels to generate.")
-    gen_group.add_argument("--stage_prefix", type=str, default="ppo_generated", help="Prefix for generated level file names.")
-    
+    gen_group = parser.add_argument_group("Generation Arguments")
+    gen_group.add_argument(
+        "--n_levels", type=int, default=10, help="Number of levels to generate."
+    )
+    gen_group.add_argument(
+        "--stage_prefix",
+        type=str,
+        default="ppo_generated",
+        help="Prefix for generated level file names.",
+    )
+
     args = parser.parse_args()
 
     if args.mode == "train":
@@ -72,6 +106,7 @@ def main():
         generate(args)
     else:
         parser.print_help()
+
 
 if __name__ == "__main__":
     main()

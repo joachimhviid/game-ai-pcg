@@ -232,7 +232,7 @@ class StageRenderer:
                     pygame.draw.rect(surface, (30, 30, 30), bg_rect, 1)
             except Exception:
                 pass
-            
+
             # draw survival mode indicator
             try:
                 if agent_mode is not None and agent_mode:

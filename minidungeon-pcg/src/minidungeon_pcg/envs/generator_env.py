@@ -4,6 +4,7 @@ from minidungeon_pcg.pcg.generator import Generator
 from minidungeon_pcg.envs.md_env import MdEnv
 import os
 
+
 class GeneratorEnv(gym.Env):
     """
     A gym environment for training the level generator.
@@ -12,6 +13,7 @@ class GeneratorEnv(gym.Env):
     - An 'observation' is the current state of the generator's parameters.
     - The 'reward' is the total reward obtained by a game-playing agent on the generated level.
     """
+
     def __init__(self, debug: bool = False):
         super().__init__()
         self.debug = debug
@@ -20,23 +22,27 @@ class GeneratorEnv(gym.Env):
         self.step_count = 0
 
         # Define the action space: delta for [min_path_length, target_monster_count, target_potion_count, target_treasure_count]
-        self.action_space = gym.spaces.Box(low=-1.0, high=1.0, shape=(4,), dtype=np.float32)
+        self.action_space = gym.spaces.Box(
+            low=-1.0, high=1.0, shape=(4,), dtype=np.float32
+        )
 
         # Define the observation space: current values of the parameters
         self.observation_space = gym.spaces.Box(
-            low=np.array([5, 1, 0, 1]), # Min values for params
-            high=np.array([20, 10, 5, 10]), # Max values for params
-            dtype=np.float32
+            low=np.array([5, 1, 0, 1]),  # Min values for params
+            high=np.array([20, 10, 5, 10]),  # Max values for params
+            dtype=np.float32,
         )
 
     def step(self, action):
         # 1. Apply action to generator parameters
-        current_params = np.array([
-            self.generator.config["min_path_length"],
-            self.generator.config["target_monster_count"],
-            self.generator.config["target_potion_count"],
-            self.generator.config["target_treasure_count"]
-        ])
+        current_params = np.array(
+            [
+                self.generator.config["min_path_length"],
+                self.generator.config["target_monster_count"],
+                self.generator.config["target_potion_count"],
+                self.generator.config["target_treasure_count"],
+            ]
+        )
 
         # Scale action to a reasonable step size
         # Let's say an action of 1.0 corresponds to a change of 1 unit
@@ -47,7 +53,7 @@ class GeneratorEnv(gym.Env):
         low_bounds = self.observation_space.low
         high_bounds = self.observation_space.high
         new_params = np.clip(new_params, low_bounds, high_bounds)
-        
+
         # Update generator config, rounding int params
         self.generator.config["min_path_length"] = int(round(new_params[0]))
         self.generator.config["target_monster_count"] = int(round(new_params[1]))
@@ -76,7 +82,7 @@ class GeneratorEnv(gym.Env):
             obs, info = sim_env.reset()
             done = False
             sim_step_count = 0
-            max_steps = 100 # Prevent infinite loops
+            max_steps = 100  # Prevent infinite loops
             while not done and sim_step_count < max_steps:
                 # The MdTreasureAgent inside MdEnv ignores this action
                 sim_action = np.zeros(sim_env.action_space.shape)
@@ -86,10 +92,9 @@ class GeneratorEnv(gym.Env):
                 sim_step_count += 1
             sim_env.close()
         except Exception as e:
-             if self.debug:
+            if self.debug:
                 print(f"GeneratorEnv: Error during simulation: {e}")
-             return self._get_obs(), -100.0, True, False, {}
-
+            return self._get_obs(), -100.0, True, False, {}
 
         if self.debug:
             print(f"GeneratorEnv: Simulation finished. Total reward: {total_reward}")
@@ -105,14 +110,14 @@ class GeneratorEnv(gym.Env):
             "target_monster_count": 3,
             "target_potion_count": 1,
             "target_treasure_count": 3,
-            "difficulty_level": 1
+            "difficulty_level": 1,
         }
         self.generator.update_internal_params()
         if self.debug:
             print("GeneratorEnv: Reset to default parameters.")
         return self._get_obs(), {}
 
-    def render(self, mode='human'):
+    def render(self, mode="human"):
         # This environment does not have a visual representation
         pass
 
@@ -122,10 +127,13 @@ class GeneratorEnv(gym.Env):
 
     def _get_obs(self):
         """Get the current observation from the generator's config."""
-        obs = np.array([
-            self.generator.config["min_path_length"],
-            self.generator.config["target_monster_count"],
-            self.generator.config["target_potion_count"],
-            self.generator.config["target_treasure_count"]
-        ], dtype=np.float32)
+        obs = np.array(
+            [
+                self.generator.config["min_path_length"],
+                self.generator.config["target_monster_count"],
+                self.generator.config["target_potion_count"],
+                self.generator.config["target_treasure_count"],
+            ],
+            dtype=np.float32,
+        )
         return obs
