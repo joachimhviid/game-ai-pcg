@@ -45,7 +45,7 @@ def play(stage_name: str):
     except Exception as e:
         print(f"An error occurred: {e}")
         print("Please make sure the stage name is correct and the file exists in 'minidungeon-pcg/src/minidungeon_pcg/pcg/stages/'.")
-        print("Example: 'ppo_generated-0' (without the .json extension)")
+        print("Example: 'ppo_generated_0' (without the .json extension)")
     finally:
         if 'env' in locals() and env:
             env.close()
@@ -53,10 +53,23 @@ def play(stage_name: str):
 
 def main():
     parser = argparse.ArgumentParser(description="Play back a generated Minidungeon level with visual rendering.")
-    parser.add_argument("stage_name", type=str, help="The name of the stage file to play (e.g., 'ppo_generated-0').")
+    parser.add_argument("stage_name", nargs='?', default=None, type=str, help="The name of the stage file to play (e.g., 'ppo_generated_0').")
+    parser.add_argument("--n_levels", type=int, default=0, help="Play n levels, starting from ppo_generated_0.")
+    parser.add_argument("--all", action="store_true", help="Play all 15 generated levels.")
     args = parser.parse_args()
     
-    play(args.stage_name)
+    if args.all:
+        for i in range(15):
+            stage_name = f"ppo_generated_{i}"
+            play(stage_name)
+    elif args.n_levels > 0:
+        for i in range(args.n_levels):
+            stage_name = f"ppo_generated_{i}"
+            play(stage_name)
+    elif args.stage_name:
+        play(args.stage_name)
+    else:
+        print("No stage specified. Use a stage name, --n_levels, or --all.")
 
 if __name__ == "__main__":
     main()
