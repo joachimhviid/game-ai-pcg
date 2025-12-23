@@ -1,19 +1,47 @@
 \section{Discussion}
 
-In previous chapters we dont want to see any of your personal opinions, but
-in this chapter your opinion matters.
-Explain your results and their meaning, convince the reader that you in fact did answer your hypothesis and research questions
-Make sure to respond to each RQ and hypotehesis.
+This chapter interprets the results presented previously, evaluating the effectiveness of the Genetic Algorithm (GA) in generating 
+dungeon layouts optimized for Flow. We discuss the implications of using AI agents as proxies for human players, the limitations 
+of the current implementation, and how this work situates itself within the broader field of Procedural Content Generation (PCG).
 
-\subsection{The Good}
+\subsection{Interpretation of Results}
+The primary objective of this study was to validate the hypothesis that a GA configured to balance challenge and skill yields higher 
+engagement potential than static generation methods. The results indicate that the system successfully evolves dungeon layouts that 
+adhere to specific difficulty curves tailored to the agent's performance.
 
-\subsection{The bad}
+While the project relies on an AI agent rather than human participants, the "proof of concept" demonstrates that the fitness function 
+effectively steers the generation process away from trivial or impossible layouts—common pitfalls in purely random generation. By treating 
+level design as an optimization problem, the system ensures that the resulting content theoretically lies within the "Flow channel," matching 
+the challenge to the simulated skill level. This suggests that the core mechanic of the GA is valid: it can identify and refine content 
+based on engagement metrics, provided those metrics are accurately modeled.
 
-\subsection{The Ugly}
-Here for comedic effect
+\subsection{Limitations}
+Despite promising results, there are several limitations. The most significant constraint is the reliance on AI agents to 
+simulate player experience. Flow Theory is inherently psychological, relying on a player's subjective emotional state (e.g., anxiety vs. boredom). 
+An AI agent, no matter how sophisticated, cannot "feel" flow, only imitate it; it can only satisfy mathematical heuristics representing difficulty. Consequently, 
+while the generated levels are structurally sound and balanced for the agent, we cannot definitively claim they would induce a state of Flow in a 
+human player without empirical user testing.
+
+Additionally, the scope of the generated dungeons is relatively small. Scaling this approach to larger, more complex environments might introduce 
+performance bottlenecks, as the computational cost of evaluating fitness for a larger population of complex dungeons could be prohibitive for 
+real-time applications compared to faster constructive methods. 
 
 \subsection{Future work}
+To bridge the gap between theoretical balance and actual player engagement, the next logical step would be to conduct user studies. Replacing the AI 
+agent with human players would provide qualitative data on enjoyment and immersion, allowing for the calibration of the fitness function based 
+on real-world feedback.
 
-\subsection{Comparisons}
-Brief context how your results fit with other similar litterature
+Furthermore, this project implements the difficulty adjustment during the generation phase. Future research could explore "Real-Time Dynamic 
+Difficulty Adjustment," where the GA runs in the background during gameplay, evolving the next segment of the dungeon based on the player's 
+performance in the current room or level of a dungeon. This would create a truly adaptive experience that responds dynamically to the player's 
+fluctuating skill level.
 
+\subsection{Comparison with Existing Literature}
+Our findings align with existing research in Search-based PCG, specifically the work of Liapis on MiniDungeons \cite{liapis_minidungeons}, 
+which demonstrates the viability of evolutionary algorithms for level design. However, where traditional approaches often prioritize solvability 
+or structural variety, our approach emphasizes the \textit{quality} of the experience through the lens of Flow Theory.
+
+Compared to constructive generation methods \cite{Constructive_PCG}, which assemble pre-authored chunks, our GA approach offers greater 
+granularity in difficulty tuning. While constructive methods are faster and computationally cheaper, they often lack the nuance to fine-tune 
+a specific difficulty curve for an individual player. This project highlights the trade-off between the speed of random generation and the 
+tailored quality of evolutionary computation.
