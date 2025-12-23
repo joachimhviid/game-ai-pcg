@@ -19,10 +19,8 @@ S = SPAWN
 P = POTION
 E = EXIT/STAIRS
 
-## PPO setup
+## Setup
 poetry install
-poetry add stable-baselines3 torch
-poetry add rich
 
 ## Running PPO
 # Train new generator model
