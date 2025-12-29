@@ -56,37 +56,51 @@ def generate(args):
     env.close()
 
 
-def train_ga(args):
-    print("--- GA Mode ---")
-    vec_env = make_vec_env(lambda: DungeonGeneratorEnv(), n_envs=4, vec_env_cls=SubprocVecEnv)
-    # env = DungeonGeneratorEnv()
-    model = PPO(
-        "MultiInputPolicy", vec_env, verbose=1, tensorboard_log="./tensorboard/"
+def train_tilebased(args):
+    model_version = args.version if args.version else 1
+    model_name = f"dungeon_gen_v{model_version}"
+    print(f"--- Tile-based Environment using Model v{model_version} ---")
+    vec_env = make_vec_env(
+        lambda: DungeonGeneratorEnv(), n_envs=6, vec_env_cls=SubprocVecEnv
     )
-    model.learn(total_timesteps=1_000_000)
-    model.save("dungeon_gen_v1")
-    print("Training complete")
 
-def generate_ga(args):
-    difficulty_target = args.n_levels if args.n_levels else 30.0
+    if os.path.exists(f"{model_name}.zip"):
+        model = PPO.load(model_name, vec_env)
+    else:
+        model = PPO(
+            "MultiInputPolicy", vec_env, verbose=1, tensorboard_log="./tensorboard/"
+        )
+    model.learn(total_timesteps=1_000_000)
+    model.save(model_name)
+    print(f"Training of {model_name} complete")
+
+
+def generate_tilebased(args):
+    model_version = args.version if args.version else 1
+    model_name = f"dungeon_gen_v{model_version}"
+    difficulty_target = args.difficulty if args.difficulty else 30.0
+    print(
+        f"Generating dungeon with target difficulty {difficulty_target} using model {model_name}"
+    )
     env = DungeonGeneratorEnv()
     obs, _ = env.reset()
     env.current_target = difficulty_target
     obs["target_reward"] = np.array([difficulty_target], dtype=np.float32)
 
-    model = PPO.load("dungeon_gen_v1")
-    
+    model = PPO.load(model_name)
+
     done = False
-    
+
     # The agent fills the board tile by tile
     while not done:
         # Agent looks at the empty map + target and decides the next tile
         action, _ = model.predict(obs, deterministic=True)
-        
+
         # Apply action
-        obs, reward, done, _, _ = env.step(action)
-        
+        obs, reward, done, _, _ = env.step(action)  # type: ignore
+
     print(DungeonGeneratorEnv.dungeon_to_str(obs["dungeon"]))
+    print(obs["dungeon"])
     return obs["dungeon"]
 
 
@@ -98,8 +112,18 @@ def main():
         "--mode",
         type=str,
         default="train",
-        choices=["train", "generate", "ga", "ga-gen"],
+        choices=["train", "generate"],
         help="Run in 'train' or 'generate' mode.",
+    )
+    parser.add_argument(
+        "--variant",
+        type=str,
+        default="tile-based",
+        choices=["tile-based", "param-based"],
+        help="Which generator environment version to use",
+    )
+    parser.add_argument(
+        "--version", type=int, default=1, help="Which model version to use"
     )
     parser.add_argument(
         "--model_file",
@@ -129,6 +153,12 @@ def main():
         "--n_levels", type=int, default=10, help="Number of levels to generate."
     )
     gen_group.add_argument(
+        "--difficulty",
+        type=float,
+        default=30.0,
+        help="Difficulty of the level to generate.",
+    )
+    gen_group.add_argument(
         "--stage_prefix",
         type=str,
         default="ppo_generated",
@@ -138,13 +168,15 @@ def main():
     args = parser.parse_args()
 
     if args.mode == "train":
-        train(args)
+        if args.variant == "tile-based":
+            train_tilebased(args)
+        else:
+            train(args)
     elif args.mode == "generate":
-        generate(args)
-    elif args.mode == "ga":
-        train_ga(args)
-    elif args.mode == "ga-gen":
-        generate_ga(args)
+        if args.variant == "tile-based":
+            generate_tilebased(args)
+        else:
+            generate(args)
     else:
         parser.print_help()
 

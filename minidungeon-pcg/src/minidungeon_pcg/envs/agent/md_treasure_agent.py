@@ -6,6 +6,16 @@ from minidungeon_pcg.envs.settings import Settings
 class MdTreasureAgent(MdAgent):
     def __init__(self, debug: bool = False) -> None:
         super().__init__(debug)
+        """
+        Action vector key:
+        0: Go to Monster
+        1: Go to Treasure without avoiding Monster
+        2: Go to Treasure while avoiding Monster
+        3: Go to Potion without avoiding Monster
+        4: Go to Potion while avoiding Monster
+        5: Go to Exit without avoiding Monster
+        6: Go to Exit while avoiding Monster
+        """
         self.standard_vector = np.array(
             # Action 3 (Go to Potion) is given a slight edge over Action 0 (Go to Monster)
             # to break ties logically instead of randomly.
