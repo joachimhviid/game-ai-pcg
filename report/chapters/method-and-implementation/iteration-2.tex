@@ -1,14 +1,21 @@
 \subsection{Iteration 2: Refactored Environment and Agent}
 \subsubsection{About}
-Second iteration involved refactoring the MiniDungeons environment.
+The second iteration involved refactoring the MiniDungeons environment to allow for streamlined integration of new levels. 
+The iteration also involved the creation of a deterministic agent in order to focus on the quality of the generated levels, 
+rather than the quality of the random steps that happened to be made by the included random agent.
 
-Purpose: Improve our ability to interact with the environment.
+The goal of the refactor was not to change the underlying functionality of MiniDungeons, but to reconfigure the environment for better
+interoperability within the project. To achieve this, a copy of \texttt{gym-md} was created, but with all its configuration file searching removed.
+Instead of using configuration files, these values would be hardcoded into the environment as it was inconsequential to the generator to have 
+variable configurations of the environment.
 
-Work:
-\begin{itemize}
-	\item Recreated \texttt{gym-md} environment and moved rendering to pygame.
-	\item Create a deterministic agent based on MiniDungeon personas \cite{holmgard2014evolvingpersonas}.
-\end{itemize}
+Following this change, the renderer was updated to use pygame instead of matplotlib. Using pygame for human rendering allowed for 
+improved verification of the agent behavior and level quality due to easily being able to add visual aids to the rendering window.
+
+The final step of this iteration was to create a deterministic agent to have a consistent level tester. The agent was based on the Treasure Seeker Persona 
+described in the original MiniDungeons paper \cite{holmgard2014evolvingpersonas}. The treasure seeker was chosen as it approximately resembles a completionist 
+focused player. This player type was deemed a reasonable balancing point as this type of player would strive to explore the majority of a dungeon to maximize 
+their reward.
 
 \subsubsection{Evaluation}
 evaluate
