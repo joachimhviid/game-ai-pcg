@@ -19,6 +19,7 @@ class DungeonGeneratorEnv(gym.Env[dict[str, np.ndarray], int]):
 
         self.rows, self.cols = map_size
         self.tile_lookup = np.array(Tiles)
+        self.tile_counts = np.zeros(len(Tiles), dtype=np.int32)
 
         # Actions are the tiles to place
         self.action_space = spaces.Discrete(len(Tiles))
@@ -48,6 +49,7 @@ class DungeonGeneratorEnv(gym.Env[dict[str, np.ndarray], int]):
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None):
         self.dungeon = np.zeros((self.rows, self.cols), dtype=np.int32)
         self.step_count = 0
+        self.tile_counts = np.zeros(len(Tiles), dtype=np.int32)
 
         # Random target
         self.current_target = np.random.uniform(5, 45)
@@ -57,7 +59,7 @@ class DungeonGeneratorEnv(gym.Env[dict[str, np.ndarray], int]):
         return {
             "dungeon": self.dungeon,
             "target_reward": np.array([self.current_target], dtype=np.float32),
-            "tile_counts": self.get_tile_counts(),
+            "tile_counts": self.tile_counts,
         }
 
     def step(self, action: int):
@@ -133,22 +135,15 @@ class DungeonGeneratorEnv(gym.Env[dict[str, np.ndarray], int]):
         for i, tile in enumerate(Tiles):
             x, y = np.where(self.dungeon == i)
             tile_count = len(x)
-            # Should include all tiles
-            if self.step_count > len(Tiles) and tile_count == 0:
-                dungeon_reward += -1
+            self.tile_counts[i] = tile_count
             # Must have only 1 start and 1 exit
-            if (tile == Tiles.START or tile == Tiles.EXIT) and tile_count != 1:
-                dungeon_reward += -10
+            if tile == Tiles.START or tile == Tiles.EXIT:
+                if tile_count != 1:
+                    dungeon_reward += -10
+                else:
+                    dungeon_reward += 10
 
         return dungeon_reward
-
-    def get_tile_counts(self):
-        tile_counts = np.zeros(len(Tiles), dtype=np.int32)
-        for i, tile in enumerate(Tiles):
-            x, y = np.where(self.dungeon == i)
-            tile_count = len(x)
-            tile_counts[i] = tile_count
-        return tile_counts
 
     @staticmethod
     def dungeon_to_str(dungeon):

@@ -61,16 +61,16 @@ def train_tilebased(args):
     model_name = f"dungeon_gen_v{model_version}"
     print(f"--- Tile-based Environment using Model v{model_version} ---")
     vec_env = make_vec_env(
-        lambda: DungeonGeneratorEnv(), n_envs=6, vec_env_cls=SubprocVecEnv
+        lambda: DungeonGeneratorEnv(), n_envs=4, vec_env_cls=SubprocVecEnv
     )
 
     if os.path.exists(f"{model_name}.zip"):
         model = PPO.load(model_name, vec_env)
     else:
         model = PPO(
-            "MultiInputPolicy", vec_env, verbose=1, tensorboard_log="./tensorboard/"
+            "MultiInputPolicy", vec_env, verbose=0, tensorboard_log="./tensorboard/"
         )
-    model.learn(total_timesteps=1_000_000)
+    model.learn(total_timesteps=1_000_000, progress_bar=True)
     model.save(model_name)
     print(f"Training of {model_name} complete")
 

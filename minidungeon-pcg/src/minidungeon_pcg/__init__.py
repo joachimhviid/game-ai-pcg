@@ -3,7 +3,6 @@ import sys
 
 
 stage_name = sys.argv[1] if len(sys.argv) > 1 else "ga_generated"
-print(f"Registering env with stage {stage_name}")
 
 register(
     id="md-pcg",
