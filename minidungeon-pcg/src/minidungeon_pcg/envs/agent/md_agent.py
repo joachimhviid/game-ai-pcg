@@ -109,6 +109,7 @@ class MdAgent:
         reward = -0.01
         terminated = False
         truncated = False
+        solvable = False
 
         if self.position is None:
             self.position = (0, 0)
@@ -150,13 +151,14 @@ class MdAgent:
                         if target == "E":
                             reward += 10.0
                             terminated = True
+                            solvable = True
                 else:
                     reward += -0.1
             else:
                 reward += -0.1
         elif act_idx == 5:
             if 0 <= current_x < w and 0 <= current_y < h:
-                if grid[current_y][current_xcx] == "T":
+                if grid[current_y][current_x] == "T":
                     reward += 1.0
                     grid[current_y][current_x] = "."
                 elif grid[current_y][current_x] == "P":
@@ -188,7 +190,11 @@ class MdAgent:
             except Exception:
                 pass
 
-        info = {"selected_high_level": selected_action, "action": act_idx}
+        info = {
+            "selected_high_level": selected_action,
+            "action": act_idx,
+            "solvable": solvable,
+        }
         return (
             self.position,
             reward,

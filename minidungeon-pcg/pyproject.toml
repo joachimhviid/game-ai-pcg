@@ -6,7 +6,7 @@ authors = [
     {name = "Joachim Hviid",email = "johvi22@student.sdu.dk"}
 ]
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.13, <3.15"
 license = "MIT"
 
 [tool.poetry]
@@ -14,6 +14,7 @@ packages = [{include = "minidungeon_pcg", from = "src"}]
 
 [tool.poetry.scripts]
 start = "minidungeon_pcg.main:main"
+play = "minidungeon_pcg.play_level:main"
 generate-stage = "minidungeon_pcg.test_generator:main"
 format = "tools.run_black:run"
 
@@ -23,6 +24,16 @@ gymnasium = "^1.2.2"
 matplotlib = "^3.10.7"
 gym-md = {path = "patches/gym_md-0.5.2-py3-none-any.whl"}
 pygame = "^2.6.1"
+stable-baselines3 = "^2.7.1"
+rich = "^14.2.0"
+torchvision = {version = "^0.24.1", source = "pytorch_cuda_130"}
+torch = {version = "^2.9.1", source = "pytorch_cuda_130"}
+tensorboard = "^2.20.0"
+
+[[tool.poetry.source]]
+name = "pytorch_cuda_130"
+url = "https://download.pytorch.org/whl/cu130"
+priority = "explicit"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
