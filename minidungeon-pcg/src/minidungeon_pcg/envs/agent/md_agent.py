@@ -109,6 +109,7 @@ class MdAgent:
         reward = -0.01
         terminated = False
         truncated = False
+        solvable = False
 
         if self.position is None:
             self.position = (0, 0)
@@ -150,6 +151,7 @@ class MdAgent:
                         if target == "E":
                             reward += 10.0
                             terminated = True
+                            solvable = True
                 else:
                     reward += -0.1
             else:
@@ -188,7 +190,11 @@ class MdAgent:
             except Exception:
                 pass
 
-        info = {"selected_high_level": selected_action, "action": act_idx}
+        info = {
+            "selected_high_level": selected_action,
+            "action": act_idx,
+            "solvable": solvable,
+        }
         return (
             self.position,
             reward,
