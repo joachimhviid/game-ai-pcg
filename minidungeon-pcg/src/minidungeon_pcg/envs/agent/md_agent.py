@@ -133,10 +133,12 @@ class MdAgent:
                         else:
                             # award for defeating a monster
                             reward += 5.0
+                    elif target == " ":
+                        reward += -0.1
                     else:
                         self.position = (next_x, next_y)
                         if target == "T":
-                            reward += 1.0
+                            reward += 7.0
                             grid[next_y][next_x] = "."
                         if target == "P":
                             # restore some HP (to a maximum) and reward the pickup
@@ -156,19 +158,19 @@ class MdAgent:
                     reward += -0.1
             else:
                 reward += -0.1
-        elif act_idx == 5:
-            if 0 <= current_x < w and 0 <= current_y < h:
-                if grid[current_y][current_x] == "T":
-                    reward += 1.0
-                    grid[current_y][current_x] = "."
-                elif grid[current_y][current_x] == "P":
-                    # pick up potion on current tile
-                    new_hp = min(self.max_hp, self.hp + Settings.POTION_HEAL_AMOUNT)
-                    healed_amount = new_hp - self.hp
-                    self.hp = new_hp
-                    if healed_amount > 0:
-                        reward += 2.0
-                    grid[current_y][current_x] = "."
+        # elif act_idx == 5:
+        #     if 0 <= current_x < w and 0 <= current_y < h:
+        #         if grid[current_y][current_x] == "T":
+        #             reward += 7.0
+        #             grid[current_y][current_x] = "."
+        #         elif grid[current_y][current_x] == "P":
+        #             # pick up potion on current tile
+        #             new_hp = min(self.max_hp, self.hp + Settings.POTION_HEAL_AMOUNT)
+        #             healed_amount = new_hp - self.hp
+        #             self.hp = new_hp
+        #             if healed_amount > 0:
+        #                 reward += 2.0
+        #             grid[current_y][current_x] = "."
 
         # clamp reward to reasonable bounds and optionally log for debugging
         reward = float(reward)

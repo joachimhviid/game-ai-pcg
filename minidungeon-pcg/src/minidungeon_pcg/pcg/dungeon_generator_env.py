@@ -1,4 +1,5 @@
 from typing import Any, Optional, TypeAlias
+from minidungeon_pcg.envs.agent.pather import Pather
 from minidungeon_pcg.envs.md_env_sim import MdEnvSim
 from minidungeon_pcg.pcg.tiles import Tiles
 import numpy as np
@@ -10,7 +11,7 @@ from gymnasium import spaces
 Dungeon: TypeAlias = npt.NDArray[np.str_]
 
 
-class DungeonGeneratorEnv(gym.Env[dict[str, np.ndarray], int]):
+class DungeonGeneratorEnv(gym.Env[dict[str, np.ndarray], np.ndarray]):
     def __init__(
         self,
         map_size: tuple[int, int] = (9, 10),
@@ -20,9 +21,13 @@ class DungeonGeneratorEnv(gym.Env[dict[str, np.ndarray], int]):
         self.rows, self.cols = map_size
         self.tile_lookup = np.array(Tiles)
         self.tile_counts = np.zeros(len(Tiles), dtype=np.int32)
+        self.has_start = False
+        self.has_end = False
+        self.pather = Pather()
 
         # Actions are the tiles to place
-        self.action_space = spaces.Discrete(len(Tiles))
+        # self.action_space = spaces.Discrete(len(Tiles))
+        self.action_space = spaces.MultiDiscrete([self.rows, self.cols, len(Tiles)])
 
         # Observation is the dungeon map and the target reward
         self.observation_space = spaces.Dict(
@@ -43,6 +48,7 @@ class DungeonGeneratorEnv(gym.Env[dict[str, np.ndarray], int]):
                     shape=(len(Tiles),),
                     dtype=np.int32,
                 ),
+                "requirements": spaces.Box(low=0, high=1, shape=(2,), dtype=np.float32),
             }
         )
 
@@ -50,9 +56,12 @@ class DungeonGeneratorEnv(gym.Env[dict[str, np.ndarray], int]):
         self.dungeon = np.zeros((self.rows, self.cols), dtype=np.int32)
         self.step_count = 0
         self.tile_counts = np.zeros(len(Tiles), dtype=np.int32)
+        self.has_start = False
+        self.has_end = False
 
         # Random target
-        self.current_target = np.random.uniform(5, 45)
+        self.current_target = 30.0
+        # self.current_target = np.random.uniform(5, 45)
         return self._get_obs(), {}
 
     def _get_obs(self):
@@ -60,22 +69,52 @@ class DungeonGeneratorEnv(gym.Env[dict[str, np.ndarray], int]):
             "dungeon": self.dungeon,
             "target_reward": np.array([self.current_target], dtype=np.float32),
             "tile_counts": self.tile_counts,
+            "requirements": np.array(
+                [
+                    1.0 if self.tile_counts[2] == 1 else 0.0,
+                    1.0 if self.tile_counts[3] == 1 else 0.0,
+                ]
+            ),
         }
 
-    def step(self, action: int):
+    def step(self, action):
         generator_reward = 0
-
-        row = self.step_count // self.cols
-        col = self.step_count % self.cols
-        self.dungeon[row, col] = action
+        gen_info = {}
+        # row = self.step_count // self.cols
+        # col = self.step_count % self.cols
+        row, col, tile = action
+        self.dungeon[row, col] = tile
         self.step_count += 1
-
-        generator_reward += self.get_dungeon_gradual_reward()
+        
+        generator_reward += self.get_dungeon_gradual_reward(tile)
+        # generator_reward += self.get_dungeon_gradual_reward(action)
+        
+        if self.has_start and self.has_end:
+            tiled_dungeon = self.dungeon_to_str(self.dungeon)
+            start_x, start_y = np.where(tiled_dungeon == Tiles.START)
+            # print(self.step_count, tile, len(start_x), len(start_y))
+            path_to_exit = self.pather.shortest_path(
+                grid=list(tiled_dungeon),
+                start=(start_x[0], start_y[0]),
+                target_chars={"E"},
+            )
+            path_to_exit_distance = len(path_to_exit)
+            gen_info["distance_to_exit"] = path_to_exit_distance
+            if path_to_exit_distance == 0:
+                generator_reward += -50
+            else:
+                # This should probably be influenced by difficulty target
+                generator_reward += path_to_exit_distance
 
         terminated = self.step_count >= (self.rows * self.cols)
         truncated = False
 
-        if terminated:
+        
+        gen_info["tile_counts"] = self.tile_counts
+        
+        total = self.rows * self.cols
+        check_points = {int(np.ceil(total * p)) for p in (0.2, 0.4, 0.6, 0.8, 1.0)}
+        if self.step_count in check_points and self.has_start and self.has_end:
             # build the level from ints -> tiles
             valid_dungeon = self.tile_lookup[self.dungeon]
             try:
@@ -102,17 +141,21 @@ class DungeonGeneratorEnv(gym.Env[dict[str, np.ndarray], int]):
 
                 if sim_info["solvable"]:
                     delta_reward = abs(sim_reward - self.current_target)
+                    gen_info["delta_reward"] = delta_reward
+                    gen_info["target_reward"] = self.current_target
+                    gen_info["sim_reward"] = sim_reward
+                    gen_info["dungeon"] = self.dungeon
                     generator_reward = 50.0 - delta_reward
                 else:
                     generator_reward = -50.0
-
             except Exception as e:
                 print(f"GeneratorEnv: Error during simulation: {e}")
-                return self._get_obs(), -100.0, True, False, {}
+                generator_reward += -100
+                # return self._get_obs(), generator_reward, terminated, truncated, gen_info
 
-            generator_reward += self.get_dungeon_static_reward()
+            # generator_reward += self.get_dungeon_static_reward()
 
-        return self._get_obs(), generator_reward, terminated, truncated, {}
+        return self._get_obs(), generator_reward, terminated, truncated, gen_info
 
     def get_dungeon_static_reward(self):
         dungeon_reward = 0
@@ -122,26 +165,52 @@ class DungeonGeneratorEnv(gym.Env[dict[str, np.ndarray], int]):
             tile_count = len(x)
             # Should include all tiles
             if tile_count == 0:
-                dungeon_reward += -10
+                dungeon_reward += -2
+            if tile == Tiles.START and tile_count == 1:
+                dungeon_reward += 20
+            if tile == Tiles.EXIT and tile_count == 1:
+                dungeon_reward += 20
             # Must have only 1 start and 1 exit
-            if (tile == Tiles.START or tile == Tiles.EXIT) and tile_count != 1:
+            if (tile == Tiles.START or tile == Tiles.EXIT) and tile_count == 0:
                 dungeon_reward += -100
 
         return dungeon_reward
 
-    def get_dungeon_gradual_reward(self):
+    def get_dungeon_gradual_reward(self, action: int):
         dungeon_reward = 0
 
         for i, tile in enumerate(Tiles):
             x, y = np.where(self.dungeon == i)
             tile_count = len(x)
             self.tile_counts[i] = tile_count
-            # Must have only 1 start and 1 exit
-            if tile == Tiles.START or tile == Tiles.EXIT:
-                if tile_count != 1:
-                    dungeon_reward += -10
-                else:
-                    dungeon_reward += 10
+            
+            if tile == Tiles.START and tile_count == 0 and self.has_start:
+                dungeon_reward += -20
+                self.has_start = False
+                # print(f"{self.step_count}: Removed start tile")
+            if tile == Tiles.EXIT and tile_count == 0 and self.has_end:
+                dungeon_reward += -20
+                self.has_end = False
+                # print(f"{self.step_count}: Removed end tile")
+                
+            # Current tile being placed
+            if action == i:
+                # Must have only 1 start and 1 exit
+                if tile == Tiles.START:
+                    if tile_count > 1:
+                        dungeon_reward += -20
+                    if tile_count == 1 and not self.has_start:
+                        dungeon_reward += 20
+                        self.has_start = True
+                        # print(f"{self.step_count}: Added start tile")
+                if tile == Tiles.EXIT:
+                    if tile_count > 1:
+                        dungeon_reward += -20
+                    if tile_count == 1 and not self.has_end:
+                        dungeon_reward += 20
+                        self.has_end = True
+                        # print(f"{self.step_count}: Added end tile")
+
 
         return dungeon_reward
 
