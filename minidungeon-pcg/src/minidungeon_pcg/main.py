@@ -58,7 +58,7 @@ def generate(args):
 
 
 def train_tilebased(args):
-    model_version = args.version if args.version else 1.0
+    model_version = args.version if args.version else 1
     model_name = f"dungeon_gen_v{model_version}"
     print(f"--- Tile-based Environment using Model v{model_version} ---")
     vec_env = make_vec_env(
@@ -73,7 +73,7 @@ def train_tilebased(args):
         # model.set_parameters(old_model.get_parameters())
     else:
         model = PPO(
-            "MultiInputPolicy", vec_env, verbose=0, tensorboard_log="./tensorboard/"
+            "MultiInputPolicy", vec_env, verbose=0, tensorboard_log="./tensorboard/", ent_coef=0.05
         )
     model.learn(
         total_timesteps=1_000_000,
@@ -132,7 +132,7 @@ def main():
         help="Which generator environment version to use",
     )
     parser.add_argument(
-        "--version", type=float, default=1, help="Which model version to use"
+        "--version", type=int, default=1, help="Which model version to use"
     )
     parser.add_argument(
         "--model_file",

@@ -1,7 +1,8 @@
 import numpy as np
 import random
-from .pather import Pather
+from .pather import Pather, Direction
 from minidungeon_pcg.envs.settings import Settings
+from minidungeon_pcg.pcg.tiles import Tiles
 
 
 class MdAgent:
@@ -17,14 +18,15 @@ class MdAgent:
         self.pather = Pather()
         self.debug = debug
         self.action_mapping = {
-            0: ({"M"}, False),
-            1: ({"T"}, False),
-            2: ({"T"}, True),
-            3: ({"P"}, False),
-            4: ({"P"}, True),
-            5: ({"E"}, False),
-            6: ({"E"}, True),
+            0: ({Tiles.MONSTER}, False),
+            1: ({Tiles.TREASURE}, False),
+            2: ({Tiles.TREASURE}, True),
+            3: ({Tiles.POTION}, False),
+            4: ({Tiles.POTION}, True),
+            5: ({Tiles.EXIT}, False),
+            6: ({Tiles.EXIT}, True),
         }
+        # up, down, left, right
         self.deltas = {1: (0, -1), 2: (0, 1), 3: (-1, 0), 4: (1, 0)}
 
     def next_action_to(
@@ -95,18 +97,19 @@ class MdAgent:
         """
         # resolve high-level into low-level move
         if selected_action is None or selected_action not in self.action_mapping:
-            resolved_low_level = 0
+            resolved_direction = Direction.NOOP
         else:
             target_chars, avoid = self.action_mapping[selected_action]
             start = self.position if self.position is not None else (0, 0)
-            resolved_low_level = self.pather.next_action(
+            resolved_direction = self.pather.next_action(
                 grid, start, set(target_chars), avoid_monsters=avoid
             )
 
-        act_idx = int(resolved_low_level)
+        direction = resolved_direction
 
-        # now perform the low-level action (same logic as before)
-        reward = -0.01
+        # now perform the low-level action (attempt to move in the resolved direction)
+        reward = 0.0
+
         terminated = False
         truncated = False
         solvable = False
@@ -116,64 +119,53 @@ class MdAgent:
 
         current_x, current_y = self.position
 
-        if act_idx in self.deltas:
-            dx, dy = self.deltas[act_idx]
-            next_x, next_y = current_x + dx, current_y + dy
-            if 0 <= next_x < w and 0 <= next_y < h:
-                target = grid[next_y][next_x] if next_x < len(grid[next_y]) else " "
-                if target != "#":
-                    if target == "M":
+        if direction in self.deltas:
+            dx, dy = self.deltas[direction]
+            new_x, new_y = current_x + dx, current_y + dy
+            if 0 <= new_x < w and 0 <= new_y < h:
+                target = grid[new_y][new_x] if new_x < len(grid[new_y]) else " "
+                match target:
+                    case Tiles.WALL | " ":
+                        reward += -0.2
+                    case Tiles.MONSTER:
                         # combat: player takes damage but defeats the monster
                         self.hp -= Settings.MONSTER_DAMAGE
-                        self.position = (next_x, next_y)
-                        grid[next_y][next_x] = "."
+                        self.position = (new_x, new_y)
                         if self.hp <= 0:
                             # player died — do not award kill reward
                             terminated = True
+                            reward += -5.0
                         else:
                             # award for defeating a monster
                             reward += 5.0
-                    elif target == " ":
+                            grid[new_y][new_x] = Tiles.FLOOR
+                    case Tiles.TREASURE:
+                        self.position = (new_x, new_y)
+                        reward += 7.0
+                        grid[new_y][new_x] = Tiles.FLOOR
+                    case Tiles.POTION:
+                        self.position = (new_x, new_y)
+                        # restore some HP (to a maximum) and reward the pickup
+                        new_hp = min(
+                            self.max_hp, self.hp + Settings.POTION_HEAL_AMOUNT
+                        )
+                        healed_amount = new_hp - self.hp
+                        self.hp = new_hp
+                        if healed_amount > 0:
+                            reward += 2.0
+                        grid[new_y][new_x] = Tiles.FLOOR
+                    case Tiles.EXIT:
+                        self.position = (new_x, new_y)
+                        reward += 10.0
+                        terminated = True
+                        solvable = True
+                    case _:
+                        self.position = (new_x, new_y)
                         reward += -0.1
-                    else:
-                        self.position = (next_x, next_y)
-                        if target == "T":
-                            reward += 7.0
-                            grid[next_y][next_x] = "."
-                        if target == "P":
-                            # restore some HP (to a maximum) and reward the pickup
-                            new_hp = min(
-                                self.max_hp, self.hp + Settings.POTION_HEAL_AMOUNT
-                            )
-                            healed_amount = new_hp - self.hp
-                            self.hp = new_hp
-                            if healed_amount > 0:
-                                reward += 2.0
-                            grid[next_y][next_x] = "."
-                        if target == "E":
-                            reward += 10.0
-                            terminated = True
-                            solvable = True
-                else:
-                    reward += -0.1
             else:
                 reward += -0.1
-        # elif act_idx == 5:
-        #     if 0 <= current_x < w and 0 <= current_y < h:
-        #         if grid[current_y][current_x] == "T":
-        #             reward += 7.0
-        #             grid[current_y][current_x] = "."
-        #         elif grid[current_y][current_x] == "P":
-        #             # pick up potion on current tile
-        #             new_hp = min(self.max_hp, self.hp + Settings.POTION_HEAL_AMOUNT)
-        #             healed_amount = new_hp - self.hp
-        #             self.hp = new_hp
-        #             if healed_amount > 0:
-        #                 reward += 2.0
-        #             grid[current_y][current_x] = "."
 
         # clamp reward to reasonable bounds and optionally log for debugging
-        reward = float(reward)
         reward = max(-100.0, min(100.0, reward))
         if getattr(self, "debug", False):
             try:
@@ -181,7 +173,7 @@ class MdAgent:
                     "MdAgent.take_action: selected=",
                     selected_action,
                     "low_level=",
-                    act_idx,
+                    direction,
                     "reward=",
                     reward,
                     "pos=",
@@ -194,7 +186,7 @@ class MdAgent:
 
         info = {
             "selected_high_level": selected_action,
-            "action": act_idx,
+            "action": direction,
             "solvable": solvable,
         }
         return (
