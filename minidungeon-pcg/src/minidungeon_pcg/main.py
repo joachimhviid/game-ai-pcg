@@ -2,6 +2,7 @@ import argparse
 import os
 from minidungeon_pcg.pcg.dungeon_generator import DungeonGenerator
 from minidungeon_pcg.pcg.dungeon_generator_env import DungeonGeneratorEnv
+from minidungeon_pcg.pcg.tensor_callback import CustomTensorboardCallback
 import numpy as np
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
@@ -57,7 +58,7 @@ def generate(args):
 
 
 def train_tilebased(args):
-    model_version = args.version if args.version else 1
+    model_version = args.version if args.version else 1.0
     model_name = f"dungeon_gen_v{model_version}"
     print(f"--- Tile-based Environment using Model v{model_version} ---")
     vec_env = make_vec_env(
@@ -66,12 +67,20 @@ def train_tilebased(args):
 
     if os.path.exists(f"{model_name}.zip"):
         model = PPO.load(model_name, vec_env)
+        # model = PPO(
+        #     "MultiInputPolicy", vec_env, verbose=0, tensorboard_log="./tensorboard/"
+        # )
+        # model.set_parameters(old_model.get_parameters())
     else:
         model = PPO(
             "MultiInputPolicy", vec_env, verbose=0, tensorboard_log="./tensorboard/"
         )
-    model.learn(total_timesteps=1_000_000, progress_bar=True)
-    model.save(model_name)
+    model.learn(
+        total_timesteps=1_000_000,
+        progress_bar=True,
+        callback=CustomTensorboardCallback(),
+    )
+    model.save(f"{model_name}")
     print(f"Training of {model_name} complete")
 
 
@@ -94,7 +103,7 @@ def generate_tilebased(args):
     # The agent fills the board tile by tile
     while not done:
         # Agent looks at the empty map + target and decides the next tile
-        action, _ = model.predict(obs, deterministic=True)
+        action, _ = model.predict(obs, deterministic=False)
 
         # Apply action
         obs, reward, done, _, _ = env.step(action)  # type: ignore
@@ -123,7 +132,7 @@ def main():
         help="Which generator environment version to use",
     )
     parser.add_argument(
-        "--version", type=int, default=1, help="Which model version to use"
+        "--version", type=float, default=1, help="Which model version to use"
     )
     parser.add_argument(
         "--model_file",

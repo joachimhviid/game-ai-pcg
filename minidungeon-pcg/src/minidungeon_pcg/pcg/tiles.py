@@ -2,8 +2,8 @@ from enum import StrEnum
 
 
 class Tiles(StrEnum):
-    WALL = "#"
     FLOOR = "."
+    WALL = "#"
     START = "S"
     EXIT = "E"
     MONSTER = "M"
