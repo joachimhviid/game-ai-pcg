@@ -18,7 +18,40 @@ focused player. This player type was deemed a reasonable balancing point as this
 their reward.
 
 \subsubsection{Evaluation}
-evaluate
+This iteration focused on the technical infrastructure like the previous iteration and as such was evaluated through integration testing.
+
+\textbf{Verification Objectives:} The primary objective was to streamline the integration process of generated levels and find a solution for verifying
+the difficulty of a level. The system needed to pass the following criteria:
+\begin{enumerate}
+	\item \textbf{Single Artifact Map Injection:} The system must accept a dungeon level from a local directory with no additional required artifacts.
+	\item \textbf{Enhanced Rendering:} The system should display an easily extensible view during human rendering for debugging and verification purposes.
+	\item \textbf{Deterministic Agent:} The system must be tested with a non-random agent that provides consistent play patterns for level verification.
+\end{enumerate}
+
+\textbf{Testing Methodology:} Building on top of the previous iteration, a similar approach was used for testing the environment. First checking if the
+included levels functioned as expected without their accompanying configuration artifacts and then running the random agent to ensure no runtime errors occurred.
+
+To test the enhanced rendering, visual debugging indicators were added to the window such as a health bar for the agent.
+
+Finally, the deterministic agent was tested by running it through a suite of levels 10 times in a row and verifying that it would take the same actions every time.
+
+\textbf{Results:} The refactored environment worked without issues with just the level artifact and no performance degradation occurred as a result of the refactor.
+Using pygame to manage the human render proved to be superior to the previous matplotlib image shuffling implementation by allowing more customization of
+the view, thus allowing for easier visual verification. A health bar indicator and an agent behavior indicator was added to verify that the new deterministic
+agent acted as expected.
+
+The new agent was based on the treasure collector persona, meaning that its primary objective is to collect as much treasure as possible while avoiding
+monsters. A key difference from the original persona was the addition of a survival mode. Occasionally, the agent would be blocked by monsters and would be
+forced to fight, however if there were too many monsters to simply walk through the agent would ultimately terminate despite having access to healing potions.
+To resemble a human player more, a survival mode was added to the agent such that if an action would terminate the agent, but a healing potion is accessible without
+combat on the map, the agent would switch to a survival behavior and pick up the potion before continuing. This resulted in a more consistent agent that 
+was more representative of a real player in terms of gauging level difficulty.
 
 \subsubsection{Reflections and decisions}
-reflect and decide
+The results of this iteration meant that the setup was fully ready for a level generator integration.
+
+\textbf{Interpretation:} By reducing the runtime requirements for the environment to just the map artifact it was now possible to greatly reduce the future
+generators complexity. The generator now only needed to provide the level layout without having to consider the implications of variable level configurations.
+Combined with the new agent, it was now possible to consistently simulate and verify a levels difficulty by looking at the agents performance.
+
+\textbf{Impact on Future Iterations:} The results of this integration provided a streamlined and stable simulation testbed for the purpose of level generation quality verification.
