@@ -6,6 +6,7 @@ import numpy as np
 import numpy.typing as npt
 import gymnasium as gym
 from gymnasium import spaces
+from scipy.signal import convolve2d
 
 # This is a 2D array, but numpy is unable show that on a type level.
 Dungeon: TypeAlias = npt.NDArray[np.str_]
@@ -14,7 +15,7 @@ Dungeon: TypeAlias = npt.NDArray[np.str_]
 class DungeonGeneratorEnv(gym.Env[dict[str, np.ndarray], np.ndarray]):
     def __init__(
         self,
-        map_size: tuple[int, int] = (9, 10),
+        map_size: tuple[int, int] = (9, 9),
     ):
         super().__init__()
 
@@ -93,6 +94,13 @@ class DungeonGeneratorEnv(gym.Env[dict[str, np.ndarray], np.ndarray]):
             if valid:
                 generator_reward += 10
         else:
+            # If agent tries to place a Start or Exit tile, remove the old first
+            if (
+                self.tile_lookup[tile] == Tiles.START
+                or self.tile_lookup[tile] == Tiles.EXIT
+            ):
+                self.dungeon[self.dungeon == tile] = 0
+
             self.dungeon[row, col] = tile
             self.count_dungeon_tiles()
             current_fitness, valid = self.calculate_dungeon_fitness()
@@ -172,9 +180,20 @@ class DungeonGeneratorEnv(gym.Env[dict[str, np.ndarray], np.ndarray]):
             target_chars={Tiles.EXIT},
         )
         path_to_exit_distance = len(path_to_exit)
+
         if path_to_exit_distance == 0:
             return -50, False
         else:
+            exit_y, exit_x = path_to_exit[path_to_exit_distance - 1]
+            manhattan_distance: int = abs(start_x[0] - exit_x) + abs(
+                start_y[0] - exit_y
+            )
+            if manhattan_distance > 0:
+                tortuosity = path_to_exit_distance / manhattan_distance
+                # maze like path is better than straigh path
+                if tortuosity > 1.5:
+                    fitness += tortuosity * 10
+
             # start and exit not adjacent (longer path = better)
             fitness += path_to_exit_distance
 
@@ -191,6 +210,25 @@ class DungeonGeneratorEnv(gym.Env[dict[str, np.ndarray], np.ndarray]):
             fitness += 15
         else:
             fitness -= abs(0.575 - wall_ratio) * 30
+
+        # Prefer closed spaces
+        is_floor_tile = np.isin(
+            tiled_dungeon,
+            [
+                Tiles.FLOOR,
+                Tiles.START,
+                Tiles.EXIT,
+                Tiles.MONSTER,
+                Tiles.POTION,
+                Tiles.TREASURE,
+            ],
+        ).astype(int)
+
+        kernel = np.ones((3, 3))
+        open_spaces = convolve2d(is_floor_tile, kernel, mode="valid")
+        num_open_spaces: int = np.sum(open_spaces == 9)
+
+        fitness -= num_open_spaces * 2
 
         return int(fitness), True
 

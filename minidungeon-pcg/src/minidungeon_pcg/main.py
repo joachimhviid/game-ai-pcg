@@ -1,13 +1,18 @@
 import argparse
 import os
+from minidungeon_pcg.envs.md_env_sim import MdEnvSim
 from minidungeon_pcg.pcg.dungeon_generator import DungeonGenerator
 from minidungeon_pcg.pcg.dungeon_generator_env import DungeonGeneratorEnv
 from minidungeon_pcg.pcg.tensor_callback import CustomTensorboardCallback
+from minidungeon_pcg.play_level import play
 import numpy as np
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from minidungeon_pcg.envs.generator_env import GeneratorEnv
+from tqdm import tqdm
+import time
+from concurrent.futures import ProcessPoolExecutor, TimeoutError as FutureTimeout
 
 
 def train(args):
@@ -88,9 +93,10 @@ def generate_tilebased(args):
     model_version = args.version if args.version else 1
     model_name = f"dungeon_gen_v{model_version}"
     difficulty_target = args.difficulty if args.difficulty else 30.0
-    print(
-        f"Generating dungeon with target difficulty {difficulty_target} using model {model_name}"
-    )
+    if not args.mode == "benchmark":
+        print(
+            f"Generating dungeon with target difficulty {difficulty_target} using model {model_name}"
+        )
     env = DungeonGeneratorEnv()
     obs, _ = env.reset()
     env.current_target = difficulty_target
@@ -108,9 +114,85 @@ def generate_tilebased(args):
         # Apply action
         obs, reward, done, _, _ = env.step(action)  # type: ignore
 
-    print(DungeonGeneratorEnv.dungeon_to_str(obs["dungeon"]))
-    print(obs["dungeon"])
-    return obs["dungeon"]
+    if args.post == "save" or args.post == "play":
+        file_dir = os.path.dirname(__file__)
+        level_file_name = f"generated_{model_name}"
+        stage_file = os.path.join(file_dir, "pcg", "stages", f"{level_file_name}.txt")
+        with open(stage_file, "w") as f:
+            for row in DungeonGeneratorEnv.dungeon_to_str(obs["dungeon"]):
+                f.write("".join(row) + "\n")
+        print(f"Dungeon saved to {stage_file}")
+        if args.post == "play":
+            play(level_file_name)
+    return DungeonGeneratorEnv.dungeon_to_str(obs["dungeon"])
+    
+    
+def benchmark_tilebased(args):
+    difficulty_target = args.difficulty if args.difficulty else 30.0
+    n_levels = args.n_levels if args.n_levels else 1000
+    print(f"Generating {args.n_levels} levels to benchmark")
+    levels = []
+    times = []
+    for i in tqdm(range(n_levels)):
+        time_start = time.perf_counter()
+        levels.append(generate_tilebased(args))
+        duration = time.perf_counter() - time_start
+        # print(f'>took {duration:.3f} seconds')
+        times.append(duration)
+    average_time = sum(times) / n_levels
+    print(f'Average time {average_time:.3f} seconds')
+    print("Testing level solvability and difficulty accuracy...")
+    level_solves = []
+    level_deltas = []
+    
+    executor = ProcessPoolExecutor(max_workers=4)
+
+    for level in tqdm(levels):
+        try:
+            future = executor.submit(simulate_level_worker, level, 100)
+            result = future.result(timeout=2.0)          # seconds: adjust as needed
+        except FutureTimeout:
+            # simulation stuck -> treat as unsolvable
+            result = {"solvable": False, "reward": 0.0, "steps": None}
+
+        if result["solvable"]:
+            level_solves.append(True)
+            level_deltas.append(abs(result["reward"] - difficulty_target))
+        else:
+            level_solves.append(False)
+        
+    total = len(levels)
+    solved_count = sum(1 for s in level_solves if s)
+    unsolved_count = total - solved_count
+    ratio_solved = solved_count / total if total else 0.0
+    ratio_unsolved = unsolved_count / total if total else 0.0
+    avg_delta = sum(level_deltas) / len(level_deltas) if level_deltas else None
+
+    print(f"Solved {solved_count}/{total} levels")
+    print(f"Ratio solved: {ratio_solved:.3f}, Ratio unsolved: {ratio_unsolved:.3f}")
+    if avg_delta is not None:
+        print(f"Average level_delta (solved levels): {avg_delta:.3f}")
+    else:
+        print("Average level_delta: N/A (no solved levels)")
+
+
+def simulate_level_worker(level, max_steps=100):
+    from minidungeon_pcg.envs.md_env_sim import MdEnvSim
+    sim_env = MdEnvSim(level)
+    sim_env.reset()
+    done = False
+    sim_step_count = 0
+    sim_reward = 0.0
+    sim_info = {}
+    while not done and sim_step_count < max_steps:
+        sim_action = np.zeros(sim_env.action_space.shape) # type: ignore
+        obs, reward, terminated, truncated, info = sim_env.step(sim_action)
+        sim_reward += float(reward)
+        sim_info = info
+        done = bool(terminated) or bool(truncated)
+        sim_step_count += 1
+    sim_env.close()
+    return {"solvable": bool(sim_info.get("solvable", False)), "reward": sim_reward, "steps": sim_step_count}
 
 
 def main():
@@ -121,7 +203,7 @@ def main():
         "--mode",
         type=str,
         default="train",
-        choices=["train", "generate"],
+        choices=["train", "generate", "benchmark"],
         help="Run in 'train' or 'generate' mode.",
     )
     parser.add_argument(
@@ -130,6 +212,13 @@ def main():
         default="tile-based",
         choices=["tile-based", "param-based"],
         help="Which generator environment version to use",
+    )
+    parser.add_argument(
+        "--post",
+        type=str,
+        default="none",
+        choices=["none", "save", "play"],
+        help="Whether to save and/or play level after generation",
     )
     parser.add_argument(
         "--version", type=int, default=1, help="Which model version to use"
@@ -186,6 +275,9 @@ def main():
             generate_tilebased(args)
         else:
             generate(args)
+    elif args.mode == "benchmark":
+        if args.variant == "tile-based":
+            benchmark_tilebased(args)
     else:
         parser.print_help()
 
