@@ -15,8 +15,8 @@ This allows us to search for levels that specifically maximize our defined fitne
     It simplifies the debugging process, so what you see in the array is exactly what renders in the game, and allows the Genetic Algorithm to manipulate specific tiles, without complex decoding steps.
 
     \item \textbf{Simulation-Based Fitness Function:}
-    A core challenge in PCG is ensuring content quality. Static heuristics (e.g., "does the map have 5 enemies?") often fail to capture the actual gameplay experience.
-    Therefore, we implemented a \textit{simulation-based fitness function} \cite{Experience_Driven_PCG}.
+    A core challenge in PCG is ensuring content quality.
+    Therefore, we implemented a \textit{fitness function} \cite{Experience_Driven_PCG}.
     The deterministic agent (from Iteration 2) \cite{holmgard2014evolvingpersonas} plays every generated level during the evaluation phase.
     The fitness score is derived from the simulation data, focusing on three main aspects:
     \begin{itemize}
@@ -32,6 +32,7 @@ This allows us to search for levels that specifically maximize our defined fitne
         \item \textit{Tournament Selection:} We use tournament selection (k=3) to maintain diversity. It prevents the "best" individual from dominating the population too early, which is common with Roulette Wheel selection.
         \item \textit{Uniform Crossover:} Since the map is a grid without a strict linear sequence, uniform crossover offers a greater diversity in the offspring compared to single-point crossover.
         \item \textit{Random Mutation:} To prevent the algorithm from getting stuck in local optima, we apply random mutation (5\% chance per tile) to flip tile types, ensuring the search space remains explorable.
+        \item \textit{Adaptive difficulty:} The system dynamically adjusts the difficulty of the generated levels based on the agent's performance. If the agent consistently succeeds, the generator increases the number of monsters and reduces resources, and vice versa.
     \end{itemize}
 \end{itemize}
 
@@ -40,40 +41,43 @@ As this iteration involved the creation of the Genetic Algorithm, the evaluation
 
 \textbf{Test Design:}
 The objective was to verify that the Genetic Algorithm in \texttt{generator.py} could actually improve the quality of levels over time.
-We needed to confirm that the system converges towards higher fitness values and does not simply produce random noise.
+We needed to confirm that the system could evolve levels that are playable and increasingly challenging according to our fitness criteria.
 
 \textbf{Test Methodology:}
 We conducted a series of automated runs using the following parameters:
 \begin{itemize}
-    \item \textbf{Population Size:} 50 individuals
-    \item \textbf{Generations:} 100 generations
-    \item \textbf{Mutation Rate:} 5\%
-    \item \textbf{Elitism:} Top 2 individuals preserved
+    \item \textbf{Population Size:} 150 individuals.
+    \item \textbf{Generations:} 300 generations.
+    \item \textbf{Mutation Rate:} 5\%.
+    \item \textbf{Elitism:} Top 2 individuals preserved.
 \end{itemize}
 
-During these runs, we logged the maximum and average fitness of the population at each generation.
-The test was performed on a standard desktop PC, utilizing the MiniDungeons environment to simulate play-throughs.
+During these runs, we logged the average reward of the agent as well as the winrate, in order to understand the difficulty of the levels. The adaptive difficulty was then used to adjust the challenge level based on agent performance.
+If the agent consistently won, the generator would increase the number of monsters and reduce resources, leading to the agent gaining a lower reward and winrate, proving that the levels increased in difficulty.
 
 \textbf{Results:}
-The data collected from the generator showed a clear upward trend in fitness.
 In the initial generations, most levels were unplayable (fitness near zero), often resulting in the agent being walled in or not being able to complete the level, due to too many monsters.
 By generation 30, the algorithm consistently produced playable maps.
 By generation 100, the system converged on layouts that maximized the specific heuristic (e.g., maps where the agent survived with minimal health, indicating high challenge).
 
-The successful convergence demonstrated that the \texttt{generator.py} logic was correctly coupling the genotype (map array) with the phenotype (simulation outcome).
+In the initial test runs, we observed the following trends:
+\begin{itemize}
+    \item \textbf{Fitness Improvement:} The average fitness score increased steadily over generations, indicating that the GA was effectively optimizing the levels.
+    \item \textbf{Diversity Maintenance:} The population maintained a reasonable level of diversity, preventing premature convergence.
+    \item \textbf{Adaptive Difficulty:} The difficulty adjustments based on agent performance worked as intended, when the agent gained higher rewards and winrates, the level became more challenging leading to the agent gaining a lower reward and winrate.
+\end{itemize}
 
 \subsubsection{Reflections and decisions}
-The results of this iteration confirm that the technical pipeline is complete.
+The results of this iteration confirm that the GA is functional.
 The generator successfully creates levels, the environment runs them, and the agent evaluates them.
 
 \textbf{Interpretation:}
-The ability of the GA to converge proves that our fitness function provides a sufficient gradient for optimization.
-However, we observed that "fitness" does not always equal "fun" in a subjective sense.
+The levels generated by the GA met the basic functional requirements.
+However, while the levels were playable and challenging according to the agent's metrics, that would not necessarily provide an enjoyable experience for human players.
 This highlights a common challenge in PCG: balancing quantitative metrics with qualitative experience.
 Despite this, the system meets the functional requirements set out in the introduction.
 
 \textbf{Impact on Final Results:}
-With the generator functional, that concludes the 3rd iteration.
-The next step is to perform the final data collection to answer the Research Questions.
-This includes generating a batch of levels using the GA and having human players evaluate them for enjoyment, challenge, and flow.
-Overall, this iteration was crucial in transitioning from a static prototype to a dynamic, content-generating system.
+With the generator functional, that concludes the 3. iteration.
+The next step would be to implement PPO training for a more sophisticated agent, which could better evaluate the levels.
+This would likely lead to higher-quality levels that are not only challenging but also engaging for human players.
