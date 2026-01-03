@@ -6,7 +6,6 @@ from minidungeon_pcg.pcg.tiles import Tiles
 import pygame
 
 
-
 class StageRenderer:
     """Simple renderer for ASCII stage files using pygame.
 

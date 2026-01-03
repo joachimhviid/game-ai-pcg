@@ -93,12 +93,18 @@ class MdEnvSim(gym.Env[np.ndarray, np.ndarray]):
                 d_exit_avoid
             ) = 1000
         else:
-            d_mon = pather.distance_to_nearest(grid, start, {Tiles.MONSTER}, avoid_monsters=False)
-            d_tre = pather.distance_to_nearest(grid, start, {Tiles.TREASURE}, avoid_monsters=False)
+            d_mon = pather.distance_to_nearest(
+                grid, start, {Tiles.MONSTER}, avoid_monsters=False
+            )
+            d_tre = pather.distance_to_nearest(
+                grid, start, {Tiles.TREASURE}, avoid_monsters=False
+            )
             d_tre_avoid = pather.distance_to_nearest(
                 grid, start, {Tiles.TREASURE}, avoid_monsters=True
             )
-            d_pot = pather.distance_to_nearest(grid, start, {Tiles.POTION}, avoid_monsters=False)
+            d_pot = pather.distance_to_nearest(
+                grid, start, {Tiles.POTION}, avoid_monsters=False
+            )
             d_pot_avoid = pather.distance_to_nearest(
                 grid, start, {Tiles.POTION}, avoid_monsters=True
             )

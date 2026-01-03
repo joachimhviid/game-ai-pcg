@@ -1,7 +1,5 @@
 import argparse
 import os
-from minidungeon_pcg.envs.md_env_sim import MdEnvSim
-from minidungeon_pcg.pcg.dungeon_generator import DungeonGenerator
 from minidungeon_pcg.pcg.dungeon_generator_env import DungeonGeneratorEnv
 from minidungeon_pcg.pcg.tensor_callback import CustomTensorboardCallback
 from minidungeon_pcg.play_level import play
@@ -78,7 +76,11 @@ def train_tilebased(args):
         # model.set_parameters(old_model.get_parameters())
     else:
         model = PPO(
-            "MultiInputPolicy", vec_env, verbose=0, tensorboard_log="./tensorboard/", ent_coef=0.05
+            "MultiInputPolicy",
+            vec_env,
+            verbose=0,
+            tensorboard_log="./tensorboard/",
+            ent_coef=0.05,
         )
     model.learn(
         total_timesteps=1_000_000,
@@ -125,8 +127,8 @@ def generate_tilebased(args):
         if args.post == "play":
             play(level_file_name)
     return DungeonGeneratorEnv.dungeon_to_str(obs["dungeon"])
-    
-    
+
+
 def benchmark_tilebased(args):
     difficulty_target = args.difficulty if args.difficulty else 30.0
     n_levels = args.n_levels if args.n_levels else 1000
@@ -140,17 +142,17 @@ def benchmark_tilebased(args):
         # print(f'>took {duration:.3f} seconds')
         times.append(duration)
     average_time = sum(times) / n_levels
-    print(f'Average time {average_time:.3f} seconds')
+    print(f"Average time {average_time:.3f} seconds")
     print("Testing level solvability and difficulty accuracy...")
     level_solves = []
     level_deltas = []
-    
+
     executor = ProcessPoolExecutor(max_workers=4)
 
     for level in tqdm(levels):
         try:
             future = executor.submit(simulate_level_worker, level, 100)
-            result = future.result(timeout=2.0)          # seconds: adjust as needed
+            result = future.result(timeout=2.0)  # seconds: adjust as needed
         except FutureTimeout:
             # simulation stuck -> treat as unsolvable
             result = {"solvable": False, "reward": 0.0, "steps": None}
@@ -160,7 +162,7 @@ def benchmark_tilebased(args):
             level_deltas.append(abs(result["reward"] - difficulty_target))
         else:
             level_solves.append(False)
-        
+
     total = len(levels)
     solved_count = sum(1 for s in level_solves if s)
     unsolved_count = total - solved_count
@@ -178,6 +180,7 @@ def benchmark_tilebased(args):
 
 def simulate_level_worker(level, max_steps=100):
     from minidungeon_pcg.envs.md_env_sim import MdEnvSim
+
     sim_env = MdEnvSim(level)
     sim_env.reset()
     done = False
@@ -185,14 +188,18 @@ def simulate_level_worker(level, max_steps=100):
     sim_reward = 0.0
     sim_info = {}
     while not done and sim_step_count < max_steps:
-        sim_action = np.zeros(sim_env.action_space.shape) # type: ignore
+        sim_action = np.zeros(sim_env.action_space.shape)  # type: ignore
         obs, reward, terminated, truncated, info = sim_env.step(sim_action)
         sim_reward += float(reward)
         sim_info = info
         done = bool(terminated) or bool(truncated)
         sim_step_count += 1
     sim_env.close()
-    return {"solvable": bool(sim_info.get("solvable", False)), "reward": sim_reward, "steps": sim_step_count}
+    return {
+        "solvable": bool(sim_info.get("solvable", False)),
+        "reward": sim_reward,
+        "steps": sim_step_count,
+    }
 
 
 def main():
