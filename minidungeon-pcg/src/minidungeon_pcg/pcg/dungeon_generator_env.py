@@ -6,6 +6,7 @@ import numpy as np
 import numpy.typing as npt
 import gymnasium as gym
 from gymnasium import spaces
+from scipy.signal import convolve2d
 
 # This is a 2D array, but numpy is unable show that on a type level.
 Dungeon: TypeAlias = npt.NDArray[np.str_]
@@ -14,7 +15,7 @@ Dungeon: TypeAlias = npt.NDArray[np.str_]
 class DungeonGeneratorEnv(gym.Env[dict[str, np.ndarray], np.ndarray]):
     def __init__(
         self,
-        map_size: tuple[int, int] = (9, 10),
+        map_size: tuple[int, int] = (9, 9),
     ):
         super().__init__()
 
@@ -25,9 +26,8 @@ class DungeonGeneratorEnv(gym.Env[dict[str, np.ndarray], np.ndarray]):
         self.has_end = False
         self.pather = Pather()
 
-        # Actions are the tiles to place
-        # self.action_space = spaces.Discrete(len(Tiles))
-        self.action_space = spaces.MultiDiscrete([self.rows, self.cols, len(Tiles)])
+        # len(Tiles) + 1 to add a submit action
+        self.action_space = spaces.MultiDiscrete([self.rows, self.cols, len(Tiles) + 1])
 
         # Observation is the dungeon map and the target reward
         self.observation_space = spaces.Dict(
@@ -58,6 +58,7 @@ class DungeonGeneratorEnv(gym.Env[dict[str, np.ndarray], np.ndarray]):
         self.tile_counts = np.zeros(len(Tiles), dtype=np.int32)
         self.has_start = False
         self.has_end = False
+        self.last_fitness, _ = self.calculate_dungeon_fitness()
 
         # Random target
         self.current_target = 30.0
@@ -80,41 +81,40 @@ class DungeonGeneratorEnv(gym.Env[dict[str, np.ndarray], np.ndarray]):
     def step(self, action):
         generator_reward = 0
         gen_info = {}
-        # row = self.step_count // self.cols
-        # col = self.step_count % self.cols
-        row, col, tile = action
-        self.dungeon[row, col] = tile
-        self.step_count += 1
-        
-        generator_reward += self.get_dungeon_gradual_reward(tile)
-        # generator_reward += self.get_dungeon_gradual_reward(action)
-        
-        if self.has_start and self.has_end:
-            tiled_dungeon = self.dungeon_to_str(self.dungeon)
-            start_x, start_y = np.where(tiled_dungeon == Tiles.START)
-            # print(self.step_count, tile, len(start_x), len(start_y))
-            path_to_exit = self.pather.shortest_path(
-                grid=list(tiled_dungeon),
-                start=(start_x[0], start_y[0]),
-                target_chars={"E"},
-            )
-            path_to_exit_distance = len(path_to_exit)
-            gen_info["distance_to_exit"] = path_to_exit_distance
-            if path_to_exit_distance == 0:
-                generator_reward += -50
-            else:
-                # This should probably be influenced by difficulty target
-                generator_reward += path_to_exit_distance
 
-        terminated = self.step_count >= (self.rows * self.cols)
+        terminated = False
         truncated = False
 
-        
+        row, col, tile = action
+
+        if tile == len(Tiles):
+            terminated = True
+            self.count_dungeon_tiles()
+            current_fitness, valid = self.calculate_dungeon_fitness()
+            if valid:
+                generator_reward += 10
+        else:
+            # If agent tries to place a Start or Exit tile, remove the old first
+            if (
+                self.tile_lookup[tile] == Tiles.START
+                or self.tile_lookup[tile] == Tiles.EXIT
+            ):
+                self.dungeon[self.dungeon == tile] = 0
+
+            self.dungeon[row, col] = tile
+            self.count_dungeon_tiles()
+            current_fitness, valid = self.calculate_dungeon_fitness()
+
+        self.step_count += 1
+
+        generator_reward += current_fitness - self.last_fitness
+        self.last_fitness = current_fitness
+
+        truncated = self.step_count >= (self.rows * self.cols * 3)
+
         gen_info["tile_counts"] = self.tile_counts
-        
-        total = self.rows * self.cols
-        check_points = {int(np.ceil(total * p)) for p in (0.2, 0.4, 0.6, 0.8, 1.0)}
-        if self.step_count in check_points and self.has_start and self.has_end:
+
+        if terminated and valid:
             # build the level from ints -> tiles
             valid_dungeon = self.tile_lookup[self.dungeon]
             try:
@@ -124,9 +124,10 @@ class DungeonGeneratorEnv(gym.Env[dict[str, np.ndarray], np.ndarray]):
                 done = False
                 sim_step_count = 0
                 max_steps = 100  # Prevent infinite loops
+                sim_timeout = not sim_step_count < max_steps
                 sim_info = {}
                 sim_reward = 0
-                while not done and sim_step_count < max_steps:
+                while not done and not sim_timeout:
                     # The MdTreasureAgent inside env ignores this action
                     sim_action = np.zeros(sim_env.action_space.shape)  # type: ignore
                     obs, reward, sim_terminated, sim_truncated, info = sim_env.step(
@@ -151,68 +152,92 @@ class DungeonGeneratorEnv(gym.Env[dict[str, np.ndarray], np.ndarray]):
             except Exception as e:
                 print(f"GeneratorEnv: Error during simulation: {e}")
                 generator_reward += -100
-                # return self._get_obs(), generator_reward, terminated, truncated, gen_info
-
-            # generator_reward += self.get_dungeon_static_reward()
 
         return self._get_obs(), generator_reward, terminated, truncated, gen_info
 
-    def get_dungeon_static_reward(self):
-        dungeon_reward = 0
+    def calculate_dungeon_fitness(self):
+        fitness = 0.0
+        floors, walls, starts, exits, monsters, potions, treasures = [
+            int(x) for x in self.tile_counts
+        ]
 
+        if starts == 0 or exits == 0:
+            return -50, False
+
+        # has exactly one start
+        fitness += 10 if starts == 1 else -10 * (starts - 1)
+
+        # has exactly one exit
+        fitness += 10 if exits == 1 else -10 * (exits - 1)
+
+        # start and exit has connected path
+        tiled_dungeon = self.dungeon_to_str(self.dungeon)
+        start_y, start_x = np.where(tiled_dungeon == Tiles.START)
+
+        path_to_exit = self.pather.shortest_path(
+            grid=list(tiled_dungeon),
+            start=(start_x[0], start_y[0]),
+            target_chars={Tiles.EXIT},
+        )
+        path_to_exit_distance = len(path_to_exit)
+
+        if path_to_exit_distance == 0:
+            return -50, False
+        else:
+            exit_y, exit_x = path_to_exit[path_to_exit_distance - 1]
+            manhattan_distance: int = abs(start_x[0] - exit_x) + abs(
+                start_y[0] - exit_y
+            )
+            if manhattan_distance > 0:
+                tortuosity = path_to_exit_distance / manhattan_distance
+                # maze like path is better than straigh path
+                if tortuosity > 1.5:
+                    fitness += tortuosity * 10
+
+            # start and exit not adjacent (longer path = better)
+            fitness += path_to_exit_distance
+
+        # should include all tiles
+        if np.all(self.tile_counts > 0):
+            fitness += 10
+        else:
+            missing_count = int(np.sum(self.tile_counts == 0))
+            fitness -= 5 * missing_count
+
+        # should have a certain wall ratio
+        wall_ratio = walls / (self.rows * self.cols)
+        if 0.20 <= wall_ratio <= 0.60:
+            fitness += 15
+        else:
+            fitness -= abs(0.575 - wall_ratio) * 30
+
+        # Prefer closed spaces
+        is_floor_tile = np.isin(
+            tiled_dungeon,
+            [
+                Tiles.FLOOR,
+                Tiles.START,
+                Tiles.EXIT,
+                Tiles.MONSTER,
+                Tiles.POTION,
+                Tiles.TREASURE,
+            ],
+        ).astype(int)
+
+        kernel = np.ones((3, 3))
+        open_spaces = convolve2d(is_floor_tile, kernel, mode="valid")
+        num_open_spaces: int = np.sum(open_spaces == 9)
+
+        fitness -= num_open_spaces * 2
+
+        return int(fitness), True
+
+    def count_dungeon_tiles(self):
         for i, tile in enumerate(Tiles):
-            x, y = np.where(self.dungeon == i)
-            tile_count = len(x)
-            # Should include all tiles
-            if tile_count == 0:
-                dungeon_reward += -2
-            if tile == Tiles.START and tile_count == 1:
-                dungeon_reward += 20
-            if tile == Tiles.EXIT and tile_count == 1:
-                dungeon_reward += 20
-            # Must have only 1 start and 1 exit
-            if (tile == Tiles.START or tile == Tiles.EXIT) and tile_count == 0:
-                dungeon_reward += -100
+            y, x = np.where(self.dungeon == i)
+            self.tile_counts[i] = len(y)
 
-        return dungeon_reward
-
-    def get_dungeon_gradual_reward(self, action: int):
-        dungeon_reward = 0
-
-        for i, tile in enumerate(Tiles):
-            x, y = np.where(self.dungeon == i)
-            tile_count = len(x)
-            self.tile_counts[i] = tile_count
-            
-            if tile == Tiles.START and tile_count == 0 and self.has_start:
-                dungeon_reward += -20
-                self.has_start = False
-                # print(f"{self.step_count}: Removed start tile")
-            if tile == Tiles.EXIT and tile_count == 0 and self.has_end:
-                dungeon_reward += -20
-                self.has_end = False
-                # print(f"{self.step_count}: Removed end tile")
-                
-            # Current tile being placed
-            if action == i:
-                # Must have only 1 start and 1 exit
-                if tile == Tiles.START:
-                    if tile_count > 1:
-                        dungeon_reward += -20
-                    if tile_count == 1 and not self.has_start:
-                        dungeon_reward += 20
-                        self.has_start = True
-                        # print(f"{self.step_count}: Added start tile")
-                if tile == Tiles.EXIT:
-                    if tile_count > 1:
-                        dungeon_reward += -20
-                    if tile_count == 1 and not self.has_end:
-                        dungeon_reward += 20
-                        self.has_end = True
-                        # print(f"{self.step_count}: Added end tile")
-
-
-        return dungeon_reward
+        return self.tile_counts
 
     @staticmethod
     def dungeon_to_str(dungeon):

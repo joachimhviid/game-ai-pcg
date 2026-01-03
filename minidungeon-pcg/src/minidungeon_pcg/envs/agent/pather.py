@@ -1,9 +1,19 @@
 from collections import deque
 from typing import List, Optional, Sequence, Set, Tuple
+from minidungeon_pcg.pcg.tiles import Tiles
 import numpy as np
+from enum import IntEnum
 
 
 Position = Tuple[int, int]
+
+
+class Direction(IntEnum):
+    NOOP = 0
+    UP = 1
+    DOWN = 2
+    LEFT = 3
+    RIGHT = 4
 
 
 class Pather:
@@ -25,14 +35,14 @@ class Pather:
     def __init__(self) -> None:
         pass
 
-    def _grid_size(self, grid: Sequence[list[str]]) -> Tuple[int, int]:
+    def _grid_size(self, grid: List[List[Tiles]]) -> Tuple[int, int]:
         height = len(grid)
         width = 0 if height == 0 else max(len(row) for row in grid)
         return width, height
 
     def bfs(
         self,
-        grid: Sequence[list[str]],
+        grid: List[List[Tiles]],
         start: Position,
         avoid_monsters: bool = False,
     ):
@@ -62,9 +72,9 @@ class Pather:
                 if (next_x, next_y) in distances:
                     continue
                 tile_char = grid[next_y][next_x] if next_x < len(grid[next_y]) else " "
-                if tile_char == "#":
+                if tile_char == Tiles.WALL or tile_char == " ":
                     continue
-                if avoid_monsters and tile_char == "M":
+                if avoid_monsters and tile_char == Tiles.MONSTER:
                     continue
                 distances[(next_x, next_y)] = distance + 1
                 prev[(next_x, next_y)] = (x, y)
@@ -74,7 +84,7 @@ class Pather:
 
     def shortest_path(
         self,
-        grid: Sequence[list[str]],
+        grid: List[List[Tiles]],
         start: Position,
         target_chars: Set[str],
         avoid_monsters: bool = False,
@@ -121,7 +131,7 @@ class Pather:
 
     def next_step(
         self,
-        grid: Sequence[list[str]],
+        grid: List[List[Tiles]],
         start: Position,
         target_chars: Set[str],
         avoid_monsters: bool = False,
@@ -138,34 +148,34 @@ class Pather:
 
     def next_action(
         self,
-        grid: Sequence[list[str]],
+        grid: List[List[Tiles]],
         start: Position,
         target_chars: Set[str],
         avoid_monsters: bool = False,
-    ) -> int:
+    ) -> Direction:
         """Return the discrete action index to move one step toward the nearest
         `target_chars` tile. Action mapping: 1 up, 2 down, 3 left, 4 right.
         Returns 0 (noop) if no move is possible or no path exists.
         """
         next = self.next_step(grid, start, target_chars, avoid_monsters=avoid_monsters)
         if next is None:
-            return 0
+            return Direction.NOOP
         start_x, start_y = start
         next_x, next_y = next
         dx, dy = next_x - start_x, next_y - start_y
         if (dx, dy) == (0, -1):
-            return 1
+            return Direction.UP
         if (dx, dy) == (0, 1):
-            return 2
+            return Direction.DOWN
         if (dx, dy) == (-1, 0):
-            return 3
+            return Direction.LEFT
         if (dx, dy) == (1, 0):
-            return 4
-        return 0
+            return Direction.RIGHT
+        return Direction.NOOP
 
     def distance_to_nearest(
         self,
-        grid: Sequence[list[str]],
+        grid: List[List[Tiles]],
         start: Position,
         target_chars: Set[str],
         avoid_monsters: bool = False,

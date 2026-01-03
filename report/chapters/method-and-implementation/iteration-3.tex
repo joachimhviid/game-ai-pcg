@@ -10,8 +10,8 @@ This allows us to search for levels that specifically maximize our defined fitne
 \textbf{Design Decisions:}
 \begin{itemize}
     \item \textbf{Genotype Representation (Direct Encoding):}
-    We chose to represent the chromosome as a direct 2D integer array matching the $9 \times 9$ grid of the game environment.
-    This \textit{Direct Encoding} approach was selected because it maps 1-to-1 with the \texttt{gym-md} \cite{GymMd} input format.
+    We chose to represent the chromosome as a $9 \times 9$ grid 2D character array as a sufficient size to add some level complexity without the computational overhead of an over-sized grid.
+    This \textit{Direct Encoding} approach was selected because it maps 1-to-1 with the MiniDungeons environment input format.
     It simplifies the debugging process, so what you see in the array is exactly what renders in the game, and allows the Genetic Algorithm to manipulate specific tiles, without complex decoding steps.
 
     \item \textbf{Simulation-Based Fitness Function:}
@@ -45,14 +45,14 @@ We needed to confirm that the system converges towards higher fitness values and
 \textbf{Test Methodology:}
 We conducted a series of automated runs using the following parameters:
 \begin{itemize}
-    \item \textbf{Population Size:} 50 individuals.
-    \item \textbf{Generations:} 100 generations.
-    \item \textbf{Mutation Rate:} 5\%.
-    \item \textbf{Elitism:} Top 2 individuals preserved.
+    \item \textbf{Population Size:} 50 individuals
+    \item \textbf{Generations:} 100 generations
+    \item \textbf{Mutation Rate:} 5\%
+    \item \textbf{Elitism:} Top 2 individuals preserved
 \end{itemize}
 
 During these runs, we logged the maximum and average fitness of the population at each generation.
-The test was performed on a standard desktop PC, utilizing the \texttt{gym-md} environment to simulate play-throughs.
+The test was performed on a standard desktop PC, utilizing the MiniDungeons environment to simulate play-throughs.
 
 \textbf{Results:}
 The data collected from the generator showed a clear upward trend in fitness.
@@ -73,7 +73,7 @@ This highlights a common challenge in PCG: balancing quantitative metrics with q
 Despite this, the system meets the functional requirements set out in the introduction.
 
 \textbf{Impact on Final Results:}
-With the generator functional, that concludes the 3. iteration.
+With the generator functional, that concludes the 3rd iteration.
 The next step is to perform the final data collection to answer the Research Questions.
 This includes generating a batch of levels using the GA and having human players evaluate them for enjoyment, challenge, and flow.
 Overall, this iteration was crucial in transitioning from a static prototype to a dynamic, content-generating system.
