@@ -4,7 +4,7 @@ The final iteration builds on the work from the previous iteration to explore an
 of creating meaningful levels for MiniDungeons, but it highlighted a bottleneck regarding scalability and deployment. 
 
 When considering a real world implementation, the GA approach proved too computationally slow to be used for runtime level generation. 
-To generate a high-fitness level, the GA generator requires approximately 30 seconds of evolutionary search.
+To generate a high-fitness level, the GA generator requires approximately 12 seconds of evolutionary search.
 Such an implementation would create unacceptable load times in a commercial video game. In comparison, a trained reinforcement learning (RL) agent 
 would be able to output a level in just a few milliseconds \cite{khalifa2020pcgrl} by shifting the long computation time from runtime to training time. 
 
@@ -37,22 +37,6 @@ Stable Baselines 3 library \cite{stable-baselines3}. The training process ran fo
     and the ratio of solvable to unsolvable levels was recorded as well as the delta reward ($Agent Reward - Level Difficulty$).
 \end{enumerate}
 
-\textbf{Results:}
-\begin{itemize}
-    \item \textbf{Training Convergence:} As shown in Figure \ref{fig:rl_training_curve}, the agent's reward stabilized after approximately 
-    650.000 timesteps, indicating successful learning of the dungeon rules.
-    \item \textbf{Speed Comparison:} The RL agent achieved an average generation time of \textbf{0.125 seconds} per level. 
-    This represents a 240\% speed increase over the GA baseline of 30 seconds, validating the main motivation for this iteration.
-    \item \textbf{Solvability:} The trained agent achieved a solvability rate of 91.2\%. This is lower than the GA version 
-    that guarantees solvability with its fitness function, although it is sufficient for a system that can regenerate invalid levels in milliseconds.
-    Additionally, the agent achieved an average delta reward of 8.699, meaning the target difficulty wasn't always reached by the generator. 
-\end{itemize}
-
-\begin{figure}[htbp]
-\centerline{\includegraphics{assets/PPO40-v19-ep-rew-mean-sm.png}}
-\caption{Mean Episodic Rewards for the RL level generator.}
-\label{fig:rl_training_curve}
-\end{figure}
 
 \subsubsection{Reflections and decisions}
 The results of this iteration confirm that Reinforcement Learning is a viable solution for runtime procedural content generation in MiniDungeons.

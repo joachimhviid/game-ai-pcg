@@ -1,10 +1,27 @@
 \section{Results}
+This chapter presents the results gathered from the procedural generation experiments performed throughout iteration 3 \& 4.
 
-More thorough results chapter than the one from methods/implementations
+\textbf{Results:}
+\begin{itemize}
+    \item \textbf{Training Convergence:} As shown in Figure \ref{fig:rl_training_curve}, the agent's reward stabilized after approximately 
+    650.000 timesteps, indicating successful learning of the dungeon rules.
+    \item \textbf{Speed Comparison:} The RL agent achieved an average generation time of \textbf{0.125 seconds} per level. 
+    This represents a 96\% speed increase over the GA baseline of 12 seconds, validating the main motivation for this iteration.
+    \item \textbf{Solvability:} The trained agent achieved a solvability rate of 91.2\%. This is lower than the GA version 
+    that guarantees solvability with its fitness function, although it is sufficient for a system that can regenerate invalid levels in milliseconds.
+    Additionally, the agent achieved an average delta reward of 8.699, meaning the target difficulty wasn't always reached by the generator. 
+\end{itemize}
 
-Show statistics if any and respond to the Research questions and/or hypothesis.
+\begin{figure}[htbp]
+\centerline{\includegraphics{assets/PPO40-v19-ep-rew-mean-sm.png}}
+\caption{Mean Episodic Rewards for the RL level generator.}
+\label{fig:rl_training_curve}
+\end{figure}
 
-Is the problem resolved?
-How have you resolved the problem/s
-Show results preferably some statistic or other form of numbers.
+% More thorough results chapter than the one from methods/implementations
 
+% Show statistics if any and respond to the Research questions and/or hypothesis.
+
+% Is the problem resolved?
+% How have you resolved the problem/s
+% Show results preferably some statistic or other form of numbers.
