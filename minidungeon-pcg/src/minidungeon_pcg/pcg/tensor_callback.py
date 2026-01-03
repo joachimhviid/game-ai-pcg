@@ -2,6 +2,7 @@ import numpy as np
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.logger import Figure
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
@@ -47,7 +48,7 @@ class CustomTensorboardCallback(BaseCallback):
                 plt.close(fig)
 
         return True
-    
+
     def _get_dungeon_plot(self):
         current_dungeon = self.locals["infos"][0]["dungeon"]
         # current_dungeon = self.training_env.get_attr("dungeon")[0]
@@ -56,12 +57,12 @@ class CustomTensorboardCallback(BaseCallback):
         image = np.zeros((rows, cols, 3), dtype=np.uint8)
 
         for tile_id, color in self.tile_colors.items():
-            mask = (map_data == tile_id)
+            mask = map_data == tile_id
             image[mask] = color
 
         fig, ax = plt.subplots(figsize=(9, 10))
-        ax.imshow(image, interpolation='nearest')
-        ax.axis('off')
+        ax.imshow(image, interpolation="nearest")
+        ax.axis("off")
         ax.set_title(f"Observed Level {self.num_timesteps}")
-        
+
         return fig

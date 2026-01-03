@@ -24,7 +24,7 @@ Specifically, the system needed to pass three criteria:
 
 \textbf{Testing Methodology:} \texttt{gym-md} came pre-configured with a suite of tests that was used for verifying the updated \texttt{gym-md} fork.
 A "Random Agent" baseline was implemented to send random action inputs to the environment for 1000 steps to ensure no runtime errors occurred during state transitions.
-To test custom map injections, a hardcoded level containing all possible game elements (walls, monsters, potions, exit) was passed to the environment constructor.
+To test custom map injections, a hardcoded level containing all possible game elements (e.g. walls, monsters, potions, etc.) was passed to the environment constructor.
 
 \textbf{Results:} The fork of \texttt{gym-md} successfully executed the simulation loop using the updated Gymnasium API.
 The Poetry configuration resolved the dependency graph, eliminating the version conflicts that would have otherwise been present in the development repository.

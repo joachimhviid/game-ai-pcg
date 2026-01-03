@@ -2,7 +2,9 @@ from os import path
 
 # from pathlib import Path
 from typing import List, Optional, Tuple
+from minidungeon_pcg.pcg.tiles import Tiles
 import pygame
+
 
 
 class StageRenderer:
@@ -15,30 +17,30 @@ class StageRenderer:
     """
 
     DEFAULT_COLORS = {
-        "#": (80, 80, 80),
-        ".": (200, 200, 200),
-        "S": (200, 200, 200),
-        "E": (100, 200, 100),
-        "T": (230, 190, 20),
-        "M": (200, 50, 50),
-        "P": (150, 50, 180),
+        Tiles.WALL: (80, 80, 80),
+        Tiles.FLOOR: (200, 200, 200),
+        Tiles.START: (200, 200, 200),
+        Tiles.EXIT: (100, 200, 100),
+        Tiles.TREASURE: (230, 190, 20),
+        Tiles.MONSTER: (200, 50, 50),
+        Tiles.POTION: (150, 50, 180),
     }
 
     # mapping from map character to asset filename (inside pcg/assets)
     DEFAULT_SPRITES = {
-        "#": "wall.png",
-        ".": "empty.png",
-        "S": "entrance.png",
-        "E": "exit.png",
-        "T": "chest.png",
-        "M": "monster.png",
-        "P": "potion.png",
+        Tiles.WALL: "wall.png",
+        Tiles.FLOOR: "empty.png",
+        Tiles.START: "entrance.png",
+        Tiles.EXIT: "exit.png",
+        Tiles.TREASURE: "chest.png",
+        Tiles.MONSTER: "monster.png",
+        Tiles.POTION: "potion.png",
     }
 
     def __init__(self, stage_name: str, window_size: int = 512):
         self.window_size = window_size
 
-        self.grid: List[List[str]] = []
+        self.grid: List[List[Tiles]] = []
         self.width = 0
         self.height = 0
         self.tile_size = 16
@@ -56,7 +58,7 @@ class StageRenderer:
         self._load_from_lines(texts)
 
     def _load_from_lines(self, lines: List[str]):
-        self.grid = [list(line) for line in lines]
+        self.grid = [[Tiles(char) for char in line] for line in lines]
         self.height = len(self.grid)
         self.width = max((len(r) for r in self.grid), default=0)
         # compute tile size so map fits window
@@ -67,8 +69,8 @@ class StageRenderer:
         # find start
         self.start_pos = None
         for y, row in enumerate(self.grid):
-            for x, ch in enumerate(row):
-                if ch == "S":
+            for x, char in enumerate(row):
+                if char == Tiles.START:
                     self.start_pos = (x, y)
                     return
 
@@ -125,8 +127,8 @@ class StageRenderer:
             return
 
         # draw floor (empty) under every tile first
-        floor_sprite = self.sprites.get(".")
-        floor_color = self.DEFAULT_COLORS.get(".", (200, 200, 200))
+        floor_sprite = self.sprites.get(Tiles.FLOOR)
+        floor_color = self.DEFAULT_COLORS.get(Tiles.FLOOR, (200, 200, 200))
 
         for y, row in enumerate(self.grid):
             for x in range(self.width):
@@ -154,7 +156,7 @@ class StageRenderer:
 
                 # draw the tile sprite or colored tile on top
                 sprite = self.sprites.get(ch)
-                if sprite and ch != ".":
+                if sprite and ch != Tiles.FLOOR:
                     try:
                         img = pygame.transform.smoothscale(
                             sprite, (self.tile_size, self.tile_size)
@@ -166,7 +168,7 @@ class StageRenderer:
                     surface.blit(img, rect.topleft)
                 else:
                     # if no sprite (or ch is '.' which is already drawn as floor), draw overlay color for non-floor
-                    if ch != "." and ch != " ":
+                    if ch != Tiles.FLOOR and ch != " ":
                         color = self.DEFAULT_COLORS.get(ch, (50, 50, 50))
                         pygame.draw.rect(surface, color, rect)
 
