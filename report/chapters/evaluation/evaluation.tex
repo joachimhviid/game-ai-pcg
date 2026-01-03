@@ -1,28 +1,44 @@
 \section{Evaluation}
+As the project comes to an end it is important to evaluate the product in relation to the research questions presented in the
+beginning of the paper. RQ1 revolves around the quality of levels produced by an algorithm. Specifically, it mentions the ability to create
+good player flow by balancing level difficulty with player skill. RQ2 aims to compare GA and RL in terms of player experience, that once again
+refers to balancing level difficulty with player skill. The question also touches on implementation performance differences by player engagement,
+as slow level generation can reduce player engagement, causing them to break out of the flow state.
 
-% A general evaluation of project and/or product then going into more specifics of
-% how we solved each Research question (RQ)
+To evaluate the research question a benchmark test was created for the implemented generators. The test focused on the following metrics gathered from
+the research questions:
+\begin{enumerate}
+  \item \textbf{Level Generation Speed:} The generators ability to quickly generate a new dungeon level.
+  \item \textbf{Level Generation Quality:} The generators ability to generate a new solvable level with a set difficulty target.
+\end{enumerate}
 
-% NOTE! It might be beneficial to merge some of the RQ sections 
-% together as they could have been solved by the same part of the project.
+\subsection{Test Design}
+\begin{enumerate}
+  \item \textbf{Generation Speed Benchmark:} Compare the time required to generate a single level between the RL generator and GA generator.
+  \item \textbf{Generation Quality Benchmark:} Compare the solvability rate and difficulty accuracy of the levels created by the RL generator and GA generator.
+\end{enumerate}
 
-As the project comes to an end its important to evaluate how well we succeded in our hypothesis and research questions. The project as a whole
-has shown to be a success in terms of delivering a functional PCG system for MiniDungeons 2 that is capable of generating dungeons based 
-on player experience. The issue has been getting real player experience, and therefore using a simple heuristics Agent to simulate player experience 
-was used instead. 
+\subsection{Test Methodology}
+\begin{enumerate}
+  \item \textbf{Speed Benchmark:} The speed benchmark consisted of generating 1000 levels and then measuring the total generation time
+        and afterwards calculating the average level generation time.
+  \item \textbf{Quality Benchmark:} The quality benchmark used the previously generated 1000 levels. Each level was played by the
+        deterministic agent from Iteration 2. The agents results were recorded and from those the ratio of solvable to unsolvable levels and
+        the difference between the agents reward and the assigned level difficulty was calculated.
+\end{enumerate}
 
-\subsection{Hypothesis Evaluation}
-Its clear that the hypothesis of being able to generate dungeons based on player experience has been met. The PCG system is capable 
-of generating dungeons based on the experience of the player, and the dungeons are tailored to the players experience, when it begins a 
-new test run. It would have been better to make the dynmaic difficulty adjustment part of the run time instead of only at the start of 
-a new run. This would have allowed for a more dynamic experience, and made it more noticable for the player.
+% \subsection{Hypothesis Evaluation}
+% Its clear that the hypothesis of being able to generate dungeons based on player experience has been met. The PCG system is capable
+% of generating dungeons based on the experience of the player, and the dungeons are tailored to the players experience, when it begins a
+% new test run. It would have been better to make the dynmaic difficulty adjustment part of the run time instead of only at the start of
+% a new run. This would have allowed for a more dynamic experience, and made it more noticable for the player.
 
-\subsection{Evaluation of RQ 1 \& 2}
-Both research questions have been answered in the project. The first research question was about the ability to use a genetic algorithm to generate
-dungeon layouts that achieve a balance between challenge and skill to create a good flow in a procedural dungeon crawler. This has been
-achieved through the implementation of the genetic algorithm, which is capable of generating dungeons based on the player experience.
-The second research question was about how procedural generation methods (Genetic Algorithm vs. Reinforcement Learning Algorithms) interact to influence 
-player experience, engagement and gameplay outcomes. This has been explored through the implementation of the genetic algorithm, and the comparison with
-Proximal Policy Optimization (PPO) reinforcement learning algorithm. The results show that the genetic algorithm, while being slower, is capable of 
-generating dungeons that are tailored to the player experience, while the PPO algorithm if computational faster, it had a harder time to 
-generate dungeons that created a good flow for the player.
+% \subsection{Evaluation of RQ 1 \& 2}
+% Both research questions have been answered in the project. The first research question was about the ability to use a genetic algorithm to generate
+% dungeon layouts that achieve a balance between challenge and skill to create a good flow in a procedural dungeon crawler. This has been
+% achieved through the implementation of the genetic algorithm, which is capable of generating dungeons based on the player experience.
+% The second research question was about how procedural generation methods (Genetic Algorithm vs. Reinforcement Learning Algorithms) interact to influence
+% player experience, engagement and gameplay outcomes. This has been explored through the implementation of the genetic algorithm, and the comparison with
+% Proximal Policy Optimization (PPO) reinforcement learning algorithm. The results show that the genetic algorithm, while being slower, is capable of
+% generating dungeons that are tailored to the player experience, while the PPO algorithm if computational faster, it had a harder time to
+% generate dungeons that created a good flow for the player.

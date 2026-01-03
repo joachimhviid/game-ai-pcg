@@ -1,6 +1,6 @@
-\subsection{Final Iteration: Reinforcement Learning}
+\subsection{Iteration 4: Reinforcement Learning}
 \subsubsection{About}
-The final iteration builds on the work from the previous iteration to explore an alternative approach to PCG. The Genetic Algorithm succeeded in terms
+The fourth iteration builds on the work from the previous iteration to explore an alternative approach to PCG. The Genetic Algorithm succeeded in terms
 of creating meaningful levels for MiniDungeons, but it highlighted a bottleneck regarding scalability and deployment. 
 
 When considering a real world implementation, the GA approach proved too computationally slow to be used for runtime level generation. 
@@ -11,32 +11,27 @@ would be able to output a level in just a few milliseconds \cite{khalifa2020pcgr
 For that reason, this iteration explores the use of reinforcement learning to achieve similar results as the GA approach. 
 
 \subsubsection{Evaluation}
-The evaluation of the RL iteration focused on two distinct metrics: 
-\begin{enumerate}
-    \item \textbf{Training Convergence:} How fast the agent learned to optimize its reward function.
-    \item \textbf{Level Generation Speed:} The agent's ability to quickly generate a new dungeon level.
-\end{enumerate}
+The evaluation of the RL iteration focused on the models training convergence to see how fast the agent learned to optimize its reward function.
 
 \textbf{Test Design:}
-The objective of this evaluation was to validate the hypothesis that a neural network could generate MiniDungeon levels significantly 
-faster than the Genetic Algorithm, without a significant loss in level quality.
-\begin{itemize}
-    \item \textbf{Training Stability:} Monitor the mean episode reward and the simulation delta reward over time to ensure the generator agent was 
-    actively learning rather than randomly placing tiles.
-    \item \textbf{Generation Speed Benchmark:} Compare the time required to generate a single level using the trained RL agent 
-    against the GA implementation.
-\end{itemize}
+To validate the hypothesis that a neural network could generate MiniDungeon levels as well as a GA, tests were focused on training stability.
+The mean episode reward and simulation delta rewards was measured over time to ensure the generator agent was actively learning rather 
+than randomly placing tiles.
 
 \textbf{Test Methodology:}
 The RL agent was trained using Proximal Policy Optimization (PPO) \cite{schulman2017proximalpolicyoptimizationalgorithms} via the 
-Stable Baselines 3 library \cite{stable-baselines3}. The training process ran for 1.000.000 timesteps.
-\begin{enumerate}
-    \item \textbf{Training Analysis:} Tensorboard logs were recorded to track the agent's smoothed reward curve.
-    \item \textbf{Speed Test:} A benchmark script was created to generate 1000 levels and then measure the total time and average level generation time.
-    \item \textbf{Solvability Test:} Using the same benchmark script, following the creation of 1000 levels. Each level was played by the deterministic agent from Iteration 2
-    and the ratio of solvable to unsolvable levels was recorded as well as the delta reward ($Agent Reward - Level Difficulty$).
-\end{enumerate}
+Stable Baselines 3 library \cite{stable-baselines3}. The training process ran for 1.000.000 timesteps. To analyse the agent's training,
+Tensorboard logs were recorded to track its episodic reward curve.
 
+\textbf{Results:}
+As shown in Figure \ref{fig:rl_training_curve}, the agent's reward roughly stabilized after approximately 400.000 timesteps, 
+indicating successful learning of the dungeon rules, but with some uncertainty as to its best course of action.
+
+\begin{figure}[bp]
+\centerline{\includegraphics{assets/PPO40-v19-ep-rew-mean-sm.png}}
+\caption{Mean Episodic Rewards for the RL level generator.}
+\label{fig:rl_training_curve}
+\end{figure}
 
 \subsubsection{Reflections and decisions}
 The results of this iteration confirm that Reinforcement Learning is a viable solution for runtime procedural content generation in MiniDungeons.

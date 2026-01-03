@@ -1,22 +1,65 @@
 \section{Results}
-This chapter presents the results gathered from the procedural generation experiments performed throughout iteration 3 \& 4.
+This section shows the findings derived from the development iterations and the overall product benchmarks defined in the previous section.
+The derived data is organized to directly address each research question before finally relating the findings to the hypothesis.
 
-\textbf{Results:}
-\begin{itemize}
-    \item \textbf{Training Convergence:} As shown in Figure \ref{fig:rl_training_curve}, the agent's reward stabilized after approximately 
-    650.000 timesteps, indicating successful learning of the dungeon rules.
-    \item \textbf{Speed Comparison:} The RL agent achieved an average generation time of \textbf{0.125 seconds} per level. 
-    This represents a 96\% speed increase over the GA baseline of 12 seconds, validating the main motivation for this iteration.
-    \item \textbf{Solvability:} The trained agent achieved a solvability rate of 91.2\%. This is lower than the GA version 
-    that guarantees solvability with its fitness function, although it is sufficient for a system that can regenerate invalid levels in milliseconds.
-    Additionally, the agent achieved an average delta reward of 8.699, meaning the target difficulty wasn't always reached by the generator. 
-\end{itemize}
+\subsection{RQ1: Genetic Algorithm Performance}
+To answer RQ1 and whether a GA can be used to create dungeon levels with good flow, we analyzed the evolutionary convergence and the solvability
+of the generated levels. By using its Fitness function to optimize its population over time, the GA was able to consistently converge on playable levels.
+Initial populations would always be largely unplayable with a low fitness score, but after roughly 30 generations it was able to output playable levels.
+Further generations saw continous improvements in terms of fitness before reaching its maximum fitness after 100 generations. Due to the fitness function,
+the GA managed to achieve 100\% solvability confirming its ability to filter out impossible layouts. The GA generators difficulty accuracy was not
+perfect, but it was good enough to be deemed a reliable offline DDA system.
 
-\begin{figure}[htbp]
-\centerline{\includegraphics{assets/PPO40-v19-ep-rew-mean-sm.png}}
-\caption{Mean Episodic Rewards for the RL level generator.}
-\label{fig:rl_training_curve}
-\end{figure}
+\subsection{RQ2: Comparative Analysis of GA vs RL}
+To answer RQ2 and how GAs and RL agents compare in a PCG context, we compared the two generators across 3 metrics in a benchmark test.
+\begin{enumerate}
+  \item \textbf{Speed:} The largest difference between the generators were their speeds. The GA required 12 seconds on average to generate a single valid level. 
+  This is explained by the iterative and evolutionary search performed by the algorithm, as it needs to simulate gameplay on optimize over a large population size
+  and number of generations.
+  Compared to the RL agent, it was far behind, as the RL agent relied on inference from its training and managed to generate levels in just 0.125 seconds. 
+  \item \textbf{Solvability:} This is where the GA proved superior as it achieved 100\% solvability compared to the RL agent only achieving 91.2\% solvability.
+  \item \textbf{Difficulty Accuracy:} The difficulty accuracy is the absolute difference between a levels intended difficulty and the deterministic player 
+  agents actual reward. While this is not a perfect solution to determining the "flow" of a level, it proved as a reliable baseline metric to make a difficulty assesment.
+  Here the RL agent pulled ahead of the GA with a reward delta of 8.7 vs 13.5. However, this value is slightly biased as the average was only calculated from
+  the solvable levels, meaning the actual reward delta for the RL agent is worse over 1000 generated levels. 
+\end{enumerate}
+
+\subsection{Hypothesis Findings}
+Regarding the initial hypothesis of a GA being better than stochastic methods at creating engaging dungeon layouts, our findings support this fact.
+By providing 100\% solvability and a reasonable difficulty accuracy, the GA proves to be much better than stochastically generated levels akin to those
+seen in early GA populations. However, due to the computational requirements of the algorithm, it might be more suitable to use a RL approach if runtime
+generation is a requirement for the product usecase.
+
+\subsection{Data Summary}
+The results of the benchmarks are presented in Table \ref{tab:benchmark-results} below.
+
+\begin{table}[htbp]
+  \caption{Benchmark Results}
+  \begin{center}
+    \begin{tabular}{|c|c|c|}
+      \hline
+      \textbf{Metric}                           & \textbf{GA} & \textbf{RL}   \\
+      \hline
+      \textbf{Avg. Generation Speed}            & 12 seconds  & 0.125 seconds \\
+      \hline
+      \textbf{Solvability Rate}                 & 100\%       & 91.2\%        \\
+      \hline
+      \textbf{Avg. Reward Delta}$^{\mathrm{a}}$ & 13.5        & 8.7           \\
+      \hline
+      \multicolumn{3}{l}{$^{\mathrm{a}}$ $|Difficulty Target - Observed Reward|$. Lower is better.}
+    \end{tabular}
+    \label{tab:benchmark-results}
+  \end{center}
+\end{table}
+
+% \begin{itemize}
+%   \item \textbf{Speed Comparison:} The RL generator achieved an average generation time of \textbf{0.125 seconds} per level and the GA generator
+%         achieved
+%         This represents a 96\% speed increase over the GA baseline of 12 seconds, validating the main motivation for this iteration.
+%   \item \textbf{Solvability:} The trained agent achieved a solvability rate of 91.2\%. This is lower than the GA version
+%         that guarantees solvability with its fitness function, although it is sufficient for a system that can regenerate invalid levels in milliseconds.
+%         Additionally, the agent achieved an average delta reward of 8.699, meaning the target difficulty wasn't always reached by the generator.
+% \end{itemize}
 
 % More thorough results chapter than the one from methods/implementations
 
