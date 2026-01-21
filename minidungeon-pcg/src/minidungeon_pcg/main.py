@@ -1,6 +1,7 @@
 import argparse
 import os
 from minidungeon_pcg.pcg.dungeon_generator_env import DungeonGeneratorEnv
+from minidungeon_pcg.pcg.generator import Generator
 from minidungeon_pcg.pcg.tensor_callback import CustomTensorboardCallback
 from minidungeon_pcg.play_level import play
 import numpy as np
@@ -200,6 +201,23 @@ def simulate_level_worker(level, max_steps=100):
         "reward": sim_reward,
         "steps": sim_step_count,
     }
+    
+    
+def generate_ga(args):
+    generator = Generator(
+        width=9,
+        height=9,
+        population_size=150,
+        generations=300,
+        mutation_rate=0.15,
+        elite_size=5,
+    )
+    if args.post == "play":
+        # file_dir = os.path.dirname(__file__)
+        level_file_name = f"generated_demo_ga"
+        # stage_file = os.path.join(file_dir, "pcg", "stages", f"{level_file_name}.txt")
+        generator.generate_dungeon(stage_name=level_file_name)
+        play(stage_name=level_file_name)
 
 
 def main():
@@ -270,7 +288,21 @@ def main():
         help="Prefix for generated level file names.",
     )
 
+    parser.add_argument("--demo", type=str, choices=["ga", "rl"])
+
     args = parser.parse_args()
+
+    # if args.demo == "ga":
+    #     generate(args)
+    # elif args.demo == "rl":
+    #     generate_tilebased(argparse.Namespace(
+    #         version=19,
+    #         difficulty=30.0,
+    #         mode="generate",
+    #         post="play",
+    #         variant='tile-based',
+    #     ))
+        # mode = 'generate', variant = 'tile-based', post = 'play', version = 19, debug = False, difficulty = 30.0
 
     if args.mode == "train":
         if args.variant == "tile-based":
@@ -281,7 +313,8 @@ def main():
         if args.variant == "tile-based":
             generate_tilebased(args)
         else:
-            generate(args)
+            generate_ga(args)
+            # generate(args)
     elif args.mode == "benchmark":
         if args.variant == "tile-based":
             benchmark_tilebased(args)
